@@ -20,7 +20,7 @@ Menubar.File = function ( editor ) {
 
 	var option = new UI.Panel();
 	option.setClass( 'option' );
-	option.setTextContent( 'New' );
+	option.setTextContent( 'Clear' );
 	option.onClick( function () {
 
 		if ( confirm( 'Any unsaved data will be lost. Are you sure?' ) ) {
@@ -58,11 +58,11 @@ Menubar.File = function ( editor ) {
 
 	//
 
-	options.add( new UI.HorizontalRule() );
+	//options.add( new UI.HorizontalRule() );
 
 	// Export Geometry
 
-	var option = new UI.Panel();
+	/*var option = new UI.Panel();
 	option.setClass( 'option' );
 	option.setTextContent( 'Export Geometry' );
 	option.onClick( function () {
@@ -92,11 +92,11 @@ Menubar.File = function ( editor ) {
 		exportString( output );
 
 	} );
-	options.add( option );
+	options.add( option );*/
 
 	// Export Object
 
-	var option = new UI.Panel();
+	/*var option = new UI.Panel();
 	option.setClass( 'option' );
 	option.setTextContent( 'Export Object' );
 	option.onClick( function () {
@@ -117,11 +117,11 @@ Menubar.File = function ( editor ) {
 		exportString( output );
 
 	} );
-	options.add( option );
+	options.add( option );*/
 
 	// Export Scene
 
-	var option = new UI.Panel();
+	/*var option = new UI.Panel();
 	option.setClass( 'option' );
 	option.setTextContent( 'Export Scene' );
 	option.onClick( function () {
@@ -133,11 +133,11 @@ Menubar.File = function ( editor ) {
 		exportString( output );
 
 	} );
-	options.add( option );
+	options.add( option );*/
 
 	// Export OBJ
 
-	var option = new UI.Panel();
+	/*var option = new UI.Panel();
 	option.setClass( 'option' );
 	option.setTextContent( 'Export OBJ' );
 	option.onClick( function () {
@@ -156,11 +156,11 @@ Menubar.File = function ( editor ) {
 		exportString( exporter.parse( object ) );
 
 	} );
-	options.add( option );
+	options.add( option );*/
 
 	// Export STL
 
-	var option = new UI.Panel();
+	/*var option = new UI.Panel();
 	option.setClass( 'option' );
 	option.setTextContent( 'Export STL' );
 	option.onClick( function () {
@@ -170,15 +170,15 @@ Menubar.File = function ( editor ) {
 		exportString( exporter.parse( editor.scene ) );
 
 	} );
-	options.add( option );
+	options.add( option );*/
 
 	//
 
-	options.add( new UI.HorizontalRule() );
+	//options.add( new UI.HorizontalRule() );
 
 	// Publish
 
-	var option = new UI.Panel();
+	/*var option = new UI.Panel();
 	option.setClass( 'option' );
 	option.setTextContent( 'Publish' );
 	option.onClick( function () {
@@ -254,7 +254,7 @@ Menubar.File = function ( editor ) {
 		} );
 
 	} );
-	options.add( option );
+	options.add( option );*/
 
 	/*
 	// Test

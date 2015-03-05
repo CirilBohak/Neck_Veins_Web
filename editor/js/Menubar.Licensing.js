@@ -1,18 +1,14 @@
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
-Menubar.Help = function ( editor ) {
+Menubar.Licensing = function ( editor ) {
 
 	var container = new UI.Panel();
 	container.setClass( 'menu' );
 
 	var title = new UI.Panel();
 	title.setClass( 'title' );
-	title.setTextContent( 'Help' );
+	title.setTextContent( 'Licensing' );
     
     container.onClick(function(){
-        alert("Help text");
+        alert("Licensing text");
     });
     
 	container.add( title );

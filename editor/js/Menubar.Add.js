@@ -32,7 +32,7 @@ Menubar.Add = function ( editor ) {
 
 	// Group
 
-	var option = new UI.Panel();
+	/*var option = new UI.Panel();
 	option.setClass( 'option' );
 	option.setTextContent( 'Group' );
 	option.onClick( function () {
@@ -48,11 +48,11 @@ Menubar.Add = function ( editor ) {
 
 	//
 
-	options.add( new UI.HorizontalRule() );
+	options.add( new UI.HorizontalRule() );*/
 
 	// Plane
 
-	var option = new UI.Panel();
+	/*var option = new UI.Panel();
 	option.setClass( 'option' );
 	option.setTextContent( 'Plane' );
 	option.onClick( function () {
@@ -254,7 +254,7 @@ Menubar.Add = function ( editor ) {
 
 	//
 
-	options.add( new UI.HorizontalRule() );
+	options.add( new UI.HorizontalRule() );*/
 
 	// PointLight
 
@@ -365,7 +365,7 @@ Menubar.Add = function ( editor ) {
 
 	//
 
-	options.add( new UI.HorizontalRule() );
+	/*options.add( new UI.HorizontalRule() );
 
 	// PerspectiveCamera
 
@@ -381,7 +381,7 @@ Menubar.Add = function ( editor ) {
 		editor.select( camera );
 
 	} );
-	options.add( option );
+	options.add( option );*/
 
 	return container;
 

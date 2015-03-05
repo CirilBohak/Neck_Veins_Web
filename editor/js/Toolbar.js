@@ -14,41 +14,41 @@ var Toolbar = function ( editor ) {
 
 	// translate / rotate / scale
 
-	var translate = new UI.Button( 'translate' ).onClick( function () {
+	/*var translate = new UI.Button( 'translate' ).onClick( function () {
 
 		signals.transformModeChanged.dispatch( 'translate' );
 
 	} );
-	buttons.add( translate );
+	buttons.add( translate );*/
 
-	var rotate = new UI.Button( 'rotate' ).onClick( function () {
+	/*var rotate = new UI.Button( 'rotate' ).onClick( function () {
 
 		signals.transformModeChanged.dispatch( 'rotate' );
 
 	} );
-	buttons.add( rotate );
+	buttons.add( rotate );*/
 
-	var scale = new UI.Button( 'scale' ).onClick( function () {
+	/*var scale = new UI.Button( 'scale' ).onClick( function () {
 
 		signals.transformModeChanged.dispatch( 'scale' );
 
 	} );
-	buttons.add( scale );
+	buttons.add( scale );*/
 
 	// grid
 
-	var grid = new UI.Number( 25 ).onChange( update );
+	/*var grid = new UI.Number( 25 ).onChange( update );
 	grid.dom.style.width = '42px';
 	buttons.add( new UI.Text( 'Grid: ' ) );
-	buttons.add( grid );
+	buttons.add( grid );*/
 
-	var snap = new UI.Checkbox( false ).onChange( update );
-	buttons.add( snap );
-	buttons.add( new UI.Text( 'snap' ) );
+	//var snap = new UI.Checkbox( false ).onChange( update );
+	//buttons.add( snap );
+	//buttons.add( new UI.Text( 'snap' ) );
 
-	var local = new UI.Checkbox( false ).onChange( update );
+	/*var local = new UI.Checkbox( false ).onChange( update );
 	buttons.add( local );
-	buttons.add( new UI.Text( 'local' ) );
+	buttons.add( new UI.Text( 'local' ) );*/
 
 	var showGrid = new UI.Checkbox().onChange( update ).setValue( true );
 	buttons.add( showGrid );
@@ -56,8 +56,8 @@ var Toolbar = function ( editor ) {
 
 	function update() {
 
-		signals.snapChanged.dispatch( snap.getValue() === true ? grid.getValue() : null );
-		signals.spaceChanged.dispatch( local.getValue() === true ? "local" : "world" );
+		//signals.snapChanged.dispatch( snap.getValue() === true ? grid.getValue() : null );
+		//signals.spaceChanged.dispatch( local.getValue() === true ? "local" : "world" );
 		signals.showGridChanged.dispatch( showGrid.getValue() );
 
 	}

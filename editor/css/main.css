@@ -128,3 +128,7 @@ textarea, input { outline: none; } /* osx */
 .MeshPhongMaterial {
 	color: #ffaa88;
 }
+
+#toolbar {
+    width: 100%;
+}
