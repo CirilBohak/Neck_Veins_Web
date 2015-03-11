@@ -12,7 +12,7 @@ Menubar.Help = function ( editor ) {
 	title.setTextContent( 'Help' );
     
     container.onClick(function(){
-        alert("Help text");
+        $("#container, #help").css("display", "block");
     });
     
 	container.add( title );

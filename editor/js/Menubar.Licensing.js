@@ -8,7 +8,7 @@ Menubar.Licensing = function ( editor ) {
 	title.setTextContent( 'Licensing' );
     
     container.onClick(function(){
-        alert("Licensing text");
+        $("#container, #licensing").css("display", "block");
     });
     
 	container.add( title );
