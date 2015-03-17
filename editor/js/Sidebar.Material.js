@@ -114,7 +114,7 @@ Sidebar.Material = function ( editor ) {
 	// emissive
 
 	var materialEmissiveRow = new UI.Panel();
-	var materialEmissive = new UI.Color().setHexValue( 0x000000 ).onChange( update );
+	var materialEmissive = new UI.Color().setHexValue( 0xff0000 ).onChange( update );
 
 	materialEmissiveRow.add( new UI.Text( 'Emissive' ).setWidth( '90px' ) );
 	materialEmissiveRow.add( materialEmissive );
@@ -401,10 +401,11 @@ Sidebar.Material = function ( editor ) {
 				object.material = material;
 
 			}
-
+            
 			if ( material.color !== undefined ) {
 
 				material.color.setHex( materialColor.getHexValue() );
+
 
 			}
 
@@ -682,7 +683,6 @@ Sidebar.Material = function ( editor ) {
 			container.setDisplay( '' );
 
 			var material = object.material;
-
 			if ( material.uuid !== undefined ) {
 
 				materialUUID.setValue( material.uuid );

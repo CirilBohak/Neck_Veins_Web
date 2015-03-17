@@ -192,10 +192,21 @@ var Loader = function ( editor ) {
 					var contents = event.target.result;
 
 					var object = new THREE.OBJLoader().parse( contents );
+                    
+                    object.traverse(function(child){
+                        if(child instanceof THREE.Mesh)
+                            child.material.color.setRGB(1,0,0);
+                    });
+                    
 					object.name = filename;
-
+                    
 					editor.addObject( object );
 					editor.select( object );
+                    
+                    var light = new THREE.PointLight( 0xffffff, 1, 0 ); 
+                    // color, intensity, distance
+                    light.name = 'InitPointLight';
+                    editor.addObject( light );
 
 				}, false );
 				reader.readAsText( file );
