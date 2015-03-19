@@ -193,9 +193,35 @@ var Loader = function ( editor ) {
 
 					var object = new THREE.OBJLoader().parse( contents );
                     
+                    // pridobi mesh in dodaj barvo na ta mesh
                     object.traverse(function(child){
-                        if(child instanceof THREE.Mesh)
+                        if(child instanceof THREE.Mesh){
                             child.material.color.setRGB(1,0,0);
+                        }
+                        
+                        if(child.geometry !== undefined){
+                            var geometry = child.geometry;
+                            var vertices = geometry.attributes.position.array;
+                            var vertexAvgX = 0, 
+                                vertexAvgY = 0, 
+                                vertexAvgZ = 0;
+                            for(var i = 0; i < vertices.length; i = i + 3){
+                                //console.log(vertices[i] + " " + vertices[i+1] + " " + vertices[i+2]);
+                                vertexAvgX = vertexAvgX + vertices[i];
+                                vertexAvgY = vertexAvgY + vertices[i+1];
+                                vertexAvgZ = vertexAvgZ + vertices[i+2];
+                                
+                            }
+                            vertexAvgX = vertexAvgX / (vertices.length / 3);
+                            vertexAvgY = vertexAvgY / (vertices.length / 3);
+                            vertexAvgZ = vertexAvgZ / (vertices.length / 3);
+                            console.log(vertexAvgX + " " + vertexAvgY + " " + vertexAvgZ);
+                            
+                            // TO-DO: round vertexAVG and move all points to center
+                            
+
+                        }
+                        
                     });
                     
 					object.name = filename;
@@ -207,6 +233,7 @@ var Loader = function ( editor ) {
                     // color, intensity, distance
                     light.name = 'InitPointLight';
                     editor.addObject( light );
+                    
 
 				}, false );
 				reader.readAsText( file );
