@@ -193,6 +193,10 @@ var Loader = function ( editor ) {
 
 					var object = new THREE.OBJLoader().parse( contents );
                     
+                    var vertexAvgX = 0, 
+                        vertexAvgY = 0, 
+                        vertexAvgZ = 0;
+                    
                     // pridobi mesh in dodaj barvo na ta mesh
                     object.traverse(function(child){
                         if(child instanceof THREE.Mesh){
@@ -202,9 +206,7 @@ var Loader = function ( editor ) {
                         if(child.geometry !== undefined){
                             var geometry = child.geometry;
                             var vertices = geometry.attributes.position.array;
-                            var vertexAvgX = 0, 
-                                vertexAvgY = 0, 
-                                vertexAvgZ = 0;
+
                             for(var i = 0; i < vertices.length; i = i + 3){
                                 //console.log(vertices[i] + " " + vertices[i+1] + " " + vertices[i+2]);
                                 vertexAvgX = vertexAvgX + vertices[i];
@@ -212,13 +214,20 @@ var Loader = function ( editor ) {
                                 vertexAvgZ = vertexAvgZ + vertices[i+2];
                                 
                             }
-                            vertexAvgX = vertexAvgX / (vertices.length / 3);
-                            vertexAvgY = vertexAvgY / (vertices.length / 3);
-                            vertexAvgZ = vertexAvgZ / (vertices.length / 3);
+                            vertexAvgX = Math.round(vertexAvgX / (vertices.length / 3) * 10) / 10;
+                            vertexAvgY = Math.round(vertexAvgY / (vertices.length / 3) * 10) / 10;
+                            vertexAvgZ = Math.round(vertexAvgZ / (vertices.length / 3) * 10) / 10;
                             console.log(vertexAvgX + " " + vertexAvgY + " " + vertexAvgZ);
-                            
                             // TO-DO: round vertexAVG and move all points to center
                             
+                            
+                            geometry.attributes.position.needsUpdate = true;
+                            for(var i = 0; i < vertices.length; i = i + 3){
+                                //console.log(vertices[i] + " " + vertices[i+1] + " " + vertices[i+2]);
+                                vertices[i] = vertices[i] - vertexAvgX;
+                                vertices[i+1] = vertices[i+1] - vertexAvgY;
+                                vertices[i+2] = vertices[i+2] - vertexAvgZ;
+                            }
 
                         }
                         
@@ -233,6 +242,7 @@ var Loader = function ( editor ) {
                     // color, intensity, distance
                     light.name = 'InitPointLight';
                     editor.addObject( light );
+                    editor.camera.lookAt(new THREE.Vector3(0,0,0));
                     
 
 				}, false );
