@@ -201,6 +201,7 @@ var Loader = function ( editor ) {
                     object.traverse(function(child){
                         if(child instanceof THREE.Mesh){
                             child.material.color.setRGB(1,0,0);
+                            child.material.side = THREE.BackSide;
                         }
                         
                         if(child.geometry !== undefined){
@@ -236,7 +237,7 @@ var Loader = function ( editor ) {
 					object.name = filename;
                     
 					editor.addObject( object );
-					editor.select( object );
+					//editor.select( object );
                     
                     var light = new THREE.PointLight( 0xffffff, 1, 0 ); 
                     // color, intensity, distance
