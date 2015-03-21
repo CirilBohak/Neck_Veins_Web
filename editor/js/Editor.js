@@ -337,7 +337,7 @@ Editor.prototype = {
 
 	select: function ( object ) {
 
-		if ( this.selected === object ) return;
+		/*if ( this.selected === object ) return;
 
 		var uuid = null;
 
@@ -350,20 +350,21 @@ Editor.prototype = {
 		this.selected = object;
 
 		this.config.setKey( 'selected', uuid );
-		this.signals.objectSelected.dispatch( object );
+		this.signals.objectSelected.dispatch( object );*/
+        uuid = null;
 
 	},
 
 	selectById: function ( id ) {
 
-		if ( id === this.camera.id ) {
+		/*if ( id === this.camera.id ) {
 
 			this.select( this.camera );
 			return;
 
 		}
 
-		this.select( this.scene.getObjectById( id, true ) );
+		this.select( this.scene.getObjectById( id, true ) );*/
 
 	},
 
@@ -371,7 +372,7 @@ Editor.prototype = {
 
 		var scope = this;
 
-		this.scene.traverse( function ( child ) {
+		/*this.scene.traverse( function ( child ) {
 
 			if ( child.uuid === uuid ) {
 
@@ -379,7 +380,7 @@ Editor.prototype = {
 
 			}
 
-		} );
+		} );*/
 
 	},
 
