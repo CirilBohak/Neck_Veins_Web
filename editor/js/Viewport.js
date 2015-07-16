@@ -295,22 +295,25 @@ var Viewport = function ( editor ) {
 	var saveTimeout;
 
 	signals.cameraChanged.add( function () {
-
 		if ( saveTimeout !== undefined ) {
 
 			clearTimeout( saveTimeout );
 
 		}
 
+        console.log("camera position: " + camera.position.toArray());
+        var sceneLight = scene.getObjectByName('InitPointLight');
+        console.log(sceneLight.position.toArray());
+        sceneLight.position.set(camera.position.x, camera.position.y, camera.position.z);
 		saveTimeout = setTimeout( function () {
 
 			editor.config.setKey(
 				'camera/position', camera.position.toArray(),
 				'camera/target', controls.center.toArray()
 			);
-
+            
+            
 		}, 1000 );
-
 		render();
 
 	} );
@@ -614,6 +617,8 @@ var Viewport = function ( editor ) {
 		scene.updateMatrixWorld();
 
 		renderer.clear();
+        
+        
 		renderer.render( scene, camera );
 
 		if ( renderer instanceof THREE.RaytracingRenderer === false ) {

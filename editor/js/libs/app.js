@@ -105,7 +105,15 @@ var APP = {
 			request = requestAnimationFrame( animate );
 
 			dispatch( scripts.update, { time: time } );
-
+            
+                    var light = new THREE.PointLight( 0xffffff, 1, 0 ); 
+                    // color, intensity, distance
+                    light.name = 'InitPointLight2';
+                    light.position.set(editor.camera.position.x, editor.camera.position.y, editor.camera.position.z);
+                    editor.addObject( light );
+                    camera.add(light);
+        
+            
 			renderer.render( scene, camera );
 
 		};

@@ -197,7 +197,7 @@ var Loader = function ( editor ) {
                         vertexAvgY = 0, 
                         vertexAvgZ = 0;
                     
-                    // pridobi mesh in dodaj barvo na ta mesh
+                    // Get mesh and add color to the mesh
                     object.traverse(function(child){
                         if(child instanceof THREE.Mesh){
                             child.material.color.setRGB(1,0,0);
@@ -219,7 +219,7 @@ var Loader = function ( editor ) {
                             vertexAvgY = Math.round(vertexAvgY / (vertices.length / 3) * 10) / 10;
                             vertexAvgZ = Math.round(vertexAvgZ / (vertices.length / 3) * 10) / 10;
                             console.log(vertexAvgX + " " + vertexAvgY + " " + vertexAvgZ);
-                            // TO-DO: round vertexAVG and move all points to center
+                            
                             
                             
                             geometry.attributes.position.needsUpdate = true;
@@ -242,8 +242,10 @@ var Loader = function ( editor ) {
                     var light = new THREE.PointLight( 0xffffff, 1, 0 ); 
                     // color, intensity, distance
                     light.name = 'InitPointLight';
+                    light.position.set(editor.camera.position.x, editor.camera.position.y, editor.camera.position.z);
                     editor.addObject( light );
                     editor.camera.lookAt(new THREE.Vector3(0,0,0));
+                    console.log("camera position: x = " + editor.camera.position.x + "; y = " + editor.camera.position.y + "; z = " + editor.camera.position.z);
                     
 
 				}, false );
