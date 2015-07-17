@@ -301,10 +301,23 @@ var Viewport = function ( editor ) {
 
 		}
 
-        //console.log("camera position: " + camera.position.toArray());
+        
+        // get camera look at vector
+        var lookAtVector = new THREE.Vector3( 0, 0, -1 );
+        lookAtVector.applyQuaternion(camera.quaternion);
+        
+        // reposition the light to cameras position
+        //var sceneLight = scene.getObjectByName('InitPointLight');
+        //sceneLight.position.set(camera.position.x, camera.position.y, camera.position.z);
+        
+        // reposition the light to cameras position using the cameras lookAtVector
         var sceneLight = scene.getObjectByName('InitPointLight');
-        //console.log(sceneLight.position.toArray());
-        sceneLight.position.set(camera.position.x, camera.position.y, camera.position.z);
+        var x = camera.position.x - lookAtVector.x * 10;
+        var y = camera.position.y - lookAtVector.y * 10;
+        var z = camera.position.z - lookAtVector.z * 10;
+        sceneLight.position.set(x, y, z);
+        
+        
 		saveTimeout = setTimeout( function () {
 
 			editor.config.setKey(

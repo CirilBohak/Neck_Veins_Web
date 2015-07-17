@@ -249,9 +249,11 @@ var Loader = function ( editor ) {
                     var light = new THREE.PointLight( 0xffffff, 1, 0 ); 
                     // color, intensity, distance
                     light.name = 'InitPointLight';
-                    light.position.set(editor.camera.position.x, editor.camera.position.y, editor.camera.position.z);
+                    
+                    light.position.set(editor.camera.position.x, editor.camera.position.y, editor.camera.position.z + 10);
                     editor.addObject( light );
                     editor.camera.lookAt(new THREE.Vector3(0,0,0));
+                
                     //console.log("camera position: x = " + editor.camera.position.x + "; y = " + editor.camera.position.y + "; z = " + editor.camera.position.z);
                     
 
