@@ -190,7 +190,7 @@ var Loader = function ( editor ) {
 				reader.addEventListener( 'load', function ( event ) {
 
 					var contents = event.target.result;
-
+                    
 					var object = new THREE.OBJLoader().parse( contents );
                     
                     var vertexAvgX = 0, 
@@ -198,6 +198,7 @@ var Loader = function ( editor ) {
                         vertexAvgZ = 0;
                     
                     // Get mesh and add color to the mesh
+                    
                     object.traverse(function(child){
                         if(child instanceof THREE.Mesh){
                             child.material.color.setRGB(1,0,0);
@@ -207,7 +208,14 @@ var Loader = function ( editor ) {
                         if(child.geometry !== undefined){
                             var geometry = child.geometry;
                             var vertices = geometry.attributes.position.array;
-
+                            //geometry.computeVertexNormals();
+                            for(ij = 0; ij < geometry.attributes.normal.array.length; ij++){
+                                geometry.attributes.normal.array[ij] = -geometry.attributes.normal.array[ij];
+                            }
+                            
+                            
+                            
+                            //console.log(normals);
                             for(var i = 0; i < vertices.length; i = i + 3){
                                 //console.log(vertices[i] + " " + vertices[i+1] + " " + vertices[i+2]);
                                 vertexAvgX = vertexAvgX + vertices[i];
@@ -218,7 +226,7 @@ var Loader = function ( editor ) {
                             vertexAvgX = Math.round(vertexAvgX / (vertices.length / 3) * 10) / 10;
                             vertexAvgY = Math.round(vertexAvgY / (vertices.length / 3) * 10) / 10;
                             vertexAvgZ = Math.round(vertexAvgZ / (vertices.length / 3) * 10) / 10;
-                            console.log(vertexAvgX + " " + vertexAvgY + " " + vertexAvgZ);
+                            //console.log(vertexAvgX + " " + vertexAvgY + " " + vertexAvgZ);
                             
                             
                             
@@ -235,7 +243,6 @@ var Loader = function ( editor ) {
                     });
                     
 					object.name = filename;
-                    
 					editor.addObject( object );
 					//editor.select( object );
                     
@@ -245,7 +252,7 @@ var Loader = function ( editor ) {
                     light.position.set(editor.camera.position.x, editor.camera.position.y, editor.camera.position.z);
                     editor.addObject( light );
                     editor.camera.lookAt(new THREE.Vector3(0,0,0));
-                    console.log("camera position: x = " + editor.camera.position.x + "; y = " + editor.camera.position.y + "; z = " + editor.camera.position.z);
+                    //console.log("camera position: x = " + editor.camera.position.x + "; y = " + editor.camera.position.y + "; z = " + editor.camera.position.z);
                     
 
 				}, false );

@@ -301,9 +301,9 @@ var Viewport = function ( editor ) {
 
 		}
 
-        console.log("camera position: " + camera.position.toArray());
+        //console.log("camera position: " + camera.position.toArray());
         var sceneLight = scene.getObjectByName('InitPointLight');
-        console.log(sceneLight.position.toArray());
+        //console.log(sceneLight.position.toArray());
         sceneLight.position.set(camera.position.x, camera.position.y, camera.position.z);
 		saveTimeout = setTimeout( function () {
 

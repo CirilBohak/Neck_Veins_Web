@@ -8726,19 +8726,18 @@ THREE.BufferGeometry.prototype = {
 	},
 
 	computeVertexNormals: function () {
-
+        
 		var attributes = this.attributes;
 
 		if ( attributes.position ) {
-
+            
 			var positions = attributes.position.array;
 
 			if ( attributes.normal === undefined ) {
-
+                
 				this.addAttribute( 'normal', new THREE.BufferAttribute( new Float32Array( positions.length ), 3 ) );
 
 			} else {
-
 				// reset existing normals to zero
 
 				var normals = attributes.normal.array;
