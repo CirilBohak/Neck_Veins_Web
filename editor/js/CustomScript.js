@@ -1,3 +1,6 @@
+// Custom variable 
+cameraStartPosition = null;
+
 $(document).on('mouseup', function(event) {
   if (!$(event.target).closest('#container').length ) {
       $("#container, #help, #licensing").css("display", "none"); 

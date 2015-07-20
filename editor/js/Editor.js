@@ -11,7 +11,6 @@ var Editor = function () {
 		// script
 
 		editScript: new SIGNALS.Signal(),
-
 		// player
 
 		startPlayer: new SIGNALS.Signal(),
@@ -65,7 +64,10 @@ var Editor = function () {
 		fogParametersChanged: new SIGNALS.Signal(),
 		windowResize: new SIGNALS.Signal(),
 
-		showGridChanged: new SIGNALS.Signal()
+		showGridChanged: new SIGNALS.Signal(),
+        
+        //camera reset
+        cameraReset: new SIGNALS.Signal()
 
 	};
 

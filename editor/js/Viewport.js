@@ -3,9 +3,22 @@
  */
 
 var Viewport = function ( editor ) {
-
 	var signals = editor.signals;
 
+    signals.cameraReset.add( function ( ) {
+        var camera = editor.camera;
+        camera.position.set(cameraStartPosition[0], cameraStartPosition[1], cameraStartPosition[2]);
+        camera.lookAt(new THREE.Vector3(0,0,0));
+        var lookAtVector = new THREE.Vector3( 0, 0, -1 );
+        lookAtVector.applyQuaternion(camera.quaternion);
+        var sceneLight = scene.getObjectByName('InitPointLight');
+        var x = camera.position.x - lookAtVector.x * 10;
+        var y = camera.position.y - lookAtVector.y * 10;
+        var z = camera.position.z - lookAtVector.z * 10;
+        sceneLight.position.set(x, y, z);
+        render();
+    } );
+    
 	var container = new UI.Panel();
 	container.setId( 'viewport' );
 	container.setPosition( 'absolute' );
@@ -150,7 +163,7 @@ var Viewport = function ( editor ) {
 
 		var array = getMousePosition( container.dom, event.clientX, event.clientY );
 		onDownPosition.fromArray( array );
-
+        
 		document.addEventListener( 'mouseup', onMouseUp, false );
 
 	};
@@ -625,7 +638,8 @@ var Viewport = function ( editor ) {
 	}
 
 	function render() {
-
+        
+        
 		sceneHelpers.updateMatrixWorld();
 		scene.updateMatrixWorld();
 

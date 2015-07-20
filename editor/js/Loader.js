@@ -253,6 +253,8 @@ var Loader = function ( editor ) {
                     light.position.set(editor.camera.position.x, editor.camera.position.y, editor.camera.position.z + 10);
                     editor.addObject( light );
                     editor.camera.lookAt(new THREE.Vector3(0,0,0));
+                    
+                    cameraStartPosition = editor.camera.position.toArray();
                 
                     //console.log("camera position: x = " + editor.camera.position.x + "; y = " + editor.camera.position.y + "; z = " + editor.camera.position.z);
                     
