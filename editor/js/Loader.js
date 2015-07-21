@@ -3,7 +3,7 @@
  */
 
 var Loader = function ( editor ) {
-
+    
     var rotWorldMatrix;      
     function rotateAroundWorldAxis( object, axis, radians ) {
         rotWorldMatrix = new THREE.Matrix4();
@@ -17,7 +17,7 @@ var Loader = function ( editor ) {
 	var signals = editor.signals;
 
 	this.loadFile = function ( file ) {
-
+        
 		var filename = file.name;
 		var extension = filename.split( '.' ).pop().toLowerCase();
 
@@ -194,10 +194,10 @@ var Loader = function ( editor ) {
 				break;
 
 			case 'obj':
-
+                
 				var reader = new FileReader();
 				reader.addEventListener( 'load', function ( event ) {
-
+                    
 					var contents = event.target.result;
                     
 					var object = new THREE.OBJLoader().parse( contents );
@@ -260,7 +260,6 @@ var Loader = function ( editor ) {
                     object.quaternion.multiplyQuaternions( quaternionX, object.quaternion );*/
                     
                     
-                    
 					editor.addObject( object );
                     sceneObject = editor.scene.getObjectByName(filename);
                     
@@ -281,6 +280,7 @@ var Loader = function ( editor ) {
                     // x is red, y is green z is blue
                     var axis = new THREE.AxisHelper(100);
                     editor.scene.add(axis);
+                    
                     //console.log("camera position: x = " + editor.camera.position.x + "; y = " + editor.camera.position.y + "; z = " + editor.camera.position.z);
                     
 

@@ -425,7 +425,6 @@ Editor.prototype = {
 		this.deselect();
 
 		this.signals.editorCleared.dispatch();
-
 	},
 
 	//

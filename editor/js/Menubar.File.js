@@ -41,8 +41,8 @@ Menubar.File = function ( editor ) {
 	var fileInput = document.createElement( 'input' );
 	fileInput.type = 'file';
 	fileInput.addEventListener( 'change', function ( event ) {
-
 		editor.loader.loadFile( fileInput.files[ 0 ] );
+        fileInput.value = "";
 
 	} );
 
@@ -50,7 +50,6 @@ Menubar.File = function ( editor ) {
 	option.setClass( 'option' );
 	option.setTextContent( 'Import' );
 	option.onClick( function () {
-
 		fileInput.click();
 
 	} );
