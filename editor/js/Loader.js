@@ -4,6 +4,15 @@
 
 var Loader = function ( editor ) {
 
+    var rotWorldMatrix;      
+    function rotateAroundWorldAxis( object, axis, radians ) {
+        rotWorldMatrix = new THREE.Matrix4();
+        rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
+        rotWorldMatrix.multiply(object.matrix);        // pre-multiply
+        object.matrix = rotWorldMatrix;
+        object.rotation.setFromRotationMatrix(object.matrix, object.order);
+    } 
+    
 	var scope = this;
 	var signals = editor.signals;
 
@@ -243,8 +252,22 @@ var Loader = function ( editor ) {
                     });
                     
 					object.name = filename;
+                    //object.rotation.set(Math.PI/180 * -90, Math.PI/180 * -45, Math.PI/180 * -135);
+                    //object.rotation.set(Math.PI/180 * -90, 1, 1);
+                    // rotate around x axis
+                    /*var quaternionX = new THREE.Quaternion();
+                    quaternionX.setFromAxisAngle(new THREE.Vector3( 1, 0, 0 ), Math.PI/180 * -180); // axis must be normalized, angle in radians
+                    object.quaternion.multiplyQuaternions( quaternionX, object.quaternion );*/
+                    
+                    
+                    
 					editor.addObject( object );
-					//editor.select( object );
+                    sceneObject = editor.scene.getObjectByName(filename);
+                    
+                    //change initial rotation
+                    rotateAroundWorldAxis( sceneObject, new THREE.Vector3( 0, 1, 0 ), Math.PI/180 * -87.5 );
+                    rotateAroundWorldAxis( sceneObject, new THREE.Vector3( 0, 0, 1 ), Math.PI/180 * -45 );
+                    rotateAroundWorldAxis( sceneObject, new THREE.Vector3( 0, 1, 0 ), Math.PI/180 * -45 );
                     
                     var light = new THREE.PointLight( 0xffffff, 1, 0 ); 
                     // color, intensity, distance
@@ -252,10 +275,12 @@ var Loader = function ( editor ) {
                     
                     light.position.set(editor.camera.position.x, editor.camera.position.y, editor.camera.position.z + 10);
                     editor.addObject( light );
-                    editor.camera.lookAt(new THREE.Vector3(0,0,0));
-                    
+                    editor.camera.lookAt(new THREE.Vector3(0,0,0));         
                     cameraStartPosition = editor.camera.position.toArray();
-                
+                    
+                    // x is red, y is green z is blue
+                    var axis = new THREE.AxisHelper(100);
+                    editor.scene.add(axis);
                     //console.log("camera position: x = " + editor.camera.position.x + "; y = " + editor.camera.position.y + "; z = " + editor.camera.position.z);
                     
 
