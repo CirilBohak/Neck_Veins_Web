@@ -26,6 +26,12 @@ THREE.EditorControls = function ( object, domElement ) {
 	var normalMatrix = new THREE.Matrix3();
 	var pointer = new THREE.Vector2();
 	var pointerOld = new THREE.Vector2();
+    
+    //keyboard vars 
+    var moveState = { up: 0, down: 0, left: 0, right: 0, forward: 0, back: 0, pitchUp: 0, pitchDown: 0, yawLeft: 0, yawRight: 0, rollLeft: 0, rollRight: 0 };
+	var moveVector = new THREE.Vector3( 0, 0, 0 );
+	var rotationVector = new THREE.Vector3( 0, 0, 0 );
+    var movementSpeedMultiplier = 0;
 
 	// events
 
@@ -101,7 +107,7 @@ THREE.EditorControls = function ( object, domElement ) {
 		vector.x = radius * Math.sin( phi ) * Math.sin( theta );
 		vector.y = radius * Math.cos( phi );
 		vector.z = radius * Math.sin( phi ) * Math.cos( theta );
-
+        console.log(vector);
 		object.position.copy( center ).add( vector );
 
 		object.lookAt( center );
@@ -208,6 +214,96 @@ THREE.EditorControls = function ( object, domElement ) {
 	domElement.addEventListener( 'mousewheel', onMouseWheel, false );
 	domElement.addEventListener( 'DOMMouseScroll', onMouseWheel, false ); // firefox
 
+    
+    // keyboard
+    document.addEventListener('keydown', onKeyDown, false);
+    document.addEventListener('keyup', onKeyUp, false);
+    
+    function onKeyDown(event){
+        if ( event.altKey ) {
+			return;
+		}
+
+		//event.preventDefault();
+
+		switch ( event.keyCode ) {
+
+			case 16: /* shift */ movementSpeedMultiplier = .1; break;
+
+			case 38: /*up*/ moveState.forward = 1; break;
+			case 40: /*down*/ moveState.back = 1; break;
+
+			case 37: /*left*/ moveState.left = 1; break;
+			case 39: /*right*/ moveState.right = 1; break;
+
+			case 82: /*R*/ moveState.up = 1; break;
+			case 70: /*F*/ moveState.down = 1; break;
+
+			case 87: /*W*/ moveState.pitchUp = 1; break;
+			case 83: /*S*/ moveState.pitchDown = 1; break;
+
+			case 65: /*A*/ moveState.yawLeft = 1; break;
+			case 68: /*D*/ moveState.yawRight = 1; break;
+
+			case 81: /*Q*/ moveState.rollLeft = 1; break;
+			case 69: /*E*/ moveState.rollRight = 1; break;
+		}
+        
+        updateMovementVector();
+        updateRotationVector();
+
+    }
+    
+    function onKeyUp(event){
+        switch( event.keyCode ) {
+
+			case 16: /* shift */ this.movementSpeedMultiplier = 1; break;
+
+			case 38: /*up*/ moveState.forward = 0; break;
+			case 40: /*down*/ moveState.back = 0; break;
+
+			case 37: /*left*/ moveState.left = 0; break;
+			case 39: /*right*/ moveState.right = 0; break;
+
+			case 82: /*R*/ moveState.up = 0; break;
+			case 70: /*F*/ moveState.down = 0; break;
+
+			case 87: /*W*/ moveState.pitchUp = 0; break;
+			case 83: /*S*/ moveState.pitchDown = 0; break;
+
+			case 65: /*A*/ moveState.yawLeft = 0; break;
+			case 68: /*D*/ moveState.yawRight = 0; break;
+
+			case 81: /*Q*/ moveState.rollLeft = 0; break;
+			case 69: /*E*/ moveState.rollRight = 0; break;
+
+		}
+        
+        updateMovementVector();
+        updateRotationVector();
+    }
+    
+    function updateMovementVector() {
+
+		var forward = ( moveState.forward) ? 1 : 0;
+
+		moveVector.x = ( -moveState.left    + moveState.right );
+		moveVector.y = ( -moveState.down    + moveState.up );
+		moveVector.z = ( -forward + moveState.back );
+        scope.pan( new THREE.Vector3( moveVector.x * 8, moveVector.y * 8, moveVector.z * 8) );
+
+	}
+    
+    function updateRotationVector () {
+
+		rotationVector.x = ( -moveState.pitchDown + moveState.pitchUp );
+		rotationVector.y = ( -moveState.yawRight  + moveState.yawLeft );
+		rotationVector.z = ( -moveState.rollRight + moveState.rollLeft );
+        
+        scope.rotate( new THREE.Vector3( - rotationVector.x * 0.05, - rotationVector.y * 0.05, rotationVector.z * 0.05) );
+
+	}
+    
 	// touch
 
 	var touch = new THREE.Vector3();

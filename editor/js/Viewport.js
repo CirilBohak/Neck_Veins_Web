@@ -2,6 +2,8 @@
  * @author mrdoob / http://mrdoob.com/
  */
 
+
+
 var Viewport = function ( editor ) {
 	var signals = editor.signals;
 
@@ -235,6 +237,16 @@ var Viewport = function ( editor ) {
 		signals.cameraChanged.dispatch( camera );
 
 	} );
+    
+    /*var flyControls = new THREE.FlyControls(camera, container.dom);
+    flyControls.movementSpeed = 25;
+    flyControls.rollSpeed = Math.PI / 24;
+    flyControls.autoForward = true;
+    flyControls.dragToLook = true;
+    flyControls.updateCamera = function(){
+        transformControls.update();
+		signals.cameraChanged.dispatch( camera );
+    }*/
 
 	// signals
 
@@ -306,7 +318,8 @@ var Viewport = function ( editor ) {
 	} );
 
 	var saveTimeout;
-
+    
+    
 	signals.cameraChanged.add( function () {
 		if ( saveTimeout !== undefined ) {
 
@@ -332,11 +345,11 @@ var Viewport = function ( editor ) {
         
         
 		saveTimeout = setTimeout( function () {
-
-			editor.config.setKey(
-				'camera/position', camera.position.toArray(),
-				'camera/target', controls.center.toArray()
-			);
+            if(camera.position != null && controls.center != null)
+                editor.config.setKey(
+                    'camera/position', camera.position.toArray(),
+                    'camera/target', controls.center.toArray()
+                );
             
             
 		}, 1000 );
@@ -609,16 +622,95 @@ var Viewport = function ( editor ) {
 
 	}
 
+    
+    // State of the different controls
+
+    
+    var controls = {
+        left: false,
+        up: false,
+        right: false,
+        down: false
+    };
+
+
+    // When the user presses a key 
+    $(document).keydown(function (e) {
+        var prevent = true;
+        // Update the state of the attached control to "true"
+        switch (e.keyCode) {
+            case 37:
+                controls.left = true;
+                break;
+            case 38:
+                controls.up = true;
+                break;
+            case 39:
+                controls.right = true;
+                break;
+            case 40:
+                controls.down = true;
+                break;
+            default:
+                prevent = false;
+        }
+        // Avoid the browser to react unexpectedly
+        if (prevent) {
+            e.preventDefault();
+        } else {
+            return;
+        }
+        // Update the character's direction
+    });
+    // When the user releases a key
+    $(document).keyup(function (e) {
+        var prevent = true;
+        // Update the state of the attached control to "false"
+        switch (e.keyCode) {
+            case 37:
+                controls.left = false;
+                break;
+            case 38:
+                controls.up = false;
+                break;
+            case 39:
+                controls.right = false;
+                break;
+            case 40:
+                controls.down = false;
+                break;
+            default:
+                prevent = false;
+        }
+        // Avoid the browser to react unexpectedly
+        if (prevent) {
+            e.preventDefault();
+        } else {
+            return;
+        }
+    });
+
+    
+    
 	function animate() {
-
+        
 		requestAnimationFrame( animate );
-
+        /*if(controls.left == true){
+            /*editor.camera.translateX(100);
+            //console.log(editor.camera.position);
+            var lookAtVector = new THREE.Vector3( 0, 0, -1 );
+            lookAtVector.applyQuaternion(editor.camera.quaternion);
+            lookAtVector.setX(lookAtVector.x + 100)
+            console.log(lookAtVector);
+            controls.target.set(-1,0,0);
+            editor.camera.lookAt(new THREE.Vector3(1000,0,0)); */ 
+        //}
 		// animations
-
+        
 		if ( THREE.AnimationHandler.animations.length > 0 ) {
 
 			THREE.AnimationHandler.update( 0.016 );
-
+            
 			for ( var i = 0, l = sceneHelpers.children.length; i < l; i ++ ) {
 
 				var helper = sceneHelpers.children[ i ];
@@ -659,3 +751,4 @@ var Viewport = function ( editor ) {
 	return container;
 
 }
+

@@ -277,11 +277,18 @@ var Loader = function ( editor ) {
                     editor.camera.lookAt(new THREE.Vector3(0,0,0));         
                     cameraStartPosition = editor.camera.position.toArray();
                     
+                    //define camera controls
+                    
+                    
+                    
                     // x is red, y is green z is blue
                     var axis = new THREE.AxisHelper(100);
                     editor.scene.add(axis);
                     
                     //console.log("camera position: x = " + editor.camera.position.x + "; y = " + editor.camera.position.y + "; z = " + editor.camera.position.z);
+                    /*var controls = new THREE.OrbitControls(editor.camera);
+                    controls.damping = 0.2;
+				    controls.addEventListener( 'change', render );*/
                     
 
 				}, false );
