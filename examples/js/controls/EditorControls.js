@@ -132,11 +132,11 @@ THREE.EditorControls = function ( object, domElement ) {
 
 			state = STATE.ZOOM;
 
-		} else if ( event.button === 2 ) {
+		} /*else if ( event.button === 2 ) {
 
 			state = STATE.PAN;
 
-		}
+		}*/
 
 		pointerOld.set( event.clientX, event.clientY );
 
@@ -166,11 +166,11 @@ THREE.EditorControls = function ( object, domElement ) {
 
 			scope.zoom( new THREE.Vector3( 0, 0, movementY ) );
 
-		} else if ( state === STATE.PAN ) {
+		} /*else if ( state === STATE.PAN ) {
 
 			scope.pan( new THREE.Vector3( - movementX, movementY, 0 ) );
 
-		}
+		}*/
 
 		pointerOld.set( event.clientX, event.clientY );
 
