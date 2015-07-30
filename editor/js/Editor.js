@@ -26,6 +26,7 @@ var Editor = function () {
 		// notifications
 
 		editorCleared: new SIGNALS.Signal(),
+        editorInitCleared: new SIGNALS.Signal(),
 
 		savingStarted: new SIGNALS.Signal(),
 		savingFinished: new SIGNALS.Signal(),
@@ -426,6 +427,29 @@ Editor.prototype = {
 		this.deselect();
 
 		this.signals.editorCleared.dispatch();
+	},
+    
+    initClear: function () {
+
+		this.camera.position.set( 500, 250, 500 );
+		this.camera.lookAt( new THREE.Vector3() );
+
+		var objects = this.scene.children;
+
+		while ( objects.length > 0 ) {
+
+			this.removeObject( objects[ 0 ] );
+
+		}
+
+		this.geometries = {};
+		this.materials = {};
+		this.textures = {};
+		this.scripts = {};
+
+		this.deselect();
+
+		this.signals.editorInitCleared.dispatch();
 	},
 
 	//

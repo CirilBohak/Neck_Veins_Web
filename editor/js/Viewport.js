@@ -251,11 +251,15 @@ var Viewport = function ( editor ) {
 	// signals
 
 	signals.editorCleared.add( function () {
-
-		controls.center.set( 0, 0, 0 );
+        if(controls.center != null)
+            controls.center.set( 0, 0, 0 );
 		render();
 
 	} );
+    
+    signals.editorInitCleared.add( function () {
+       render(); 
+    });
 
 	signals.themeChanged.add( function ( value ) {
 

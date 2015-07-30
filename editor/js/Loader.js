@@ -285,6 +285,7 @@ var Loader = function ( editor ) {
                     var axis = new THREE.AxisHelper(100);
                     editor.scene.add(axis);
                     
+                    
                     //console.log("camera position: x = " + editor.camera.position.x + "; y = " + editor.camera.position.y + "; z = " + editor.camera.position.z);
                     /*var controls = new THREE.OrbitControls(editor.camera);
                     controls.damping = 0.2;

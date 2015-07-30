@@ -136,7 +136,7 @@
 			editor.setTheme( editor.config.getKey( 'theme' ) );
 
 			editor.storage.init( function () {
-
+                
 				editor.storage.get( function ( state ) {
 
 					if ( state !== undefined ) {
@@ -152,6 +152,7 @@
 						editor.selectByUuid( selected );
 
 					}
+                    editor.initClear();
 
 				} );
 
@@ -184,7 +185,7 @@
 					}, 1000 );
 
 				};
-
+                
 				var signals = editor.signals;
 
 				signals.editorCleared.add( saveState );
@@ -206,6 +207,7 @@
 				};
 
 				signals.showDialog.add( showDialog );
+
 
 			} );
 
