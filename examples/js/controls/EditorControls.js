@@ -107,7 +107,7 @@ THREE.EditorControls = function ( object, domElement ) {
 		vector.x = radius * Math.sin( phi ) * Math.sin( theta );
 		vector.y = radius * Math.cos( phi );
 		vector.z = radius * Math.sin( phi ) * Math.cos( theta );
-        console.log(vector);
+        //console.log(vector);
 		object.position.copy( center ).add( vector );
 
 		object.lookAt( center );

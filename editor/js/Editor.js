@@ -97,7 +97,8 @@ var Editor = function () {
 Editor.prototype = {
 
 	setTheme: function ( value ) {
-
+        
+        value = 'css/dark.css';
 		document.getElementById( 'theme' ).href = value;
 
 		this.signals.themeChanged.dispatch( value );
