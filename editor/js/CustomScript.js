@@ -1,5 +1,6 @@
 // Custom variable 
 cameraStartPosition = null;
+sceneObjectName = null;
 
 $(document).on('mouseup', function(event) {
   if (!$(event.target).closest('#container').length ) {

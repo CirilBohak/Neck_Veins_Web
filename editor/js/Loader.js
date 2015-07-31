@@ -262,7 +262,7 @@ var Loader = function ( editor ) {
                     
 					editor.addObject( object );
                     sceneObject = editor.scene.getObjectByName(filename);
-                    
+                    myCamera = editor.camera;
                     //change initial rotation
                     rotateAroundWorldAxis( sceneObject, new THREE.Vector3( 0, 1, 0 ), Math.PI/180 * -87.5 );
                     rotateAroundWorldAxis( sceneObject, new THREE.Vector3( 0, 0, 1 ), Math.PI/180 * -45 );

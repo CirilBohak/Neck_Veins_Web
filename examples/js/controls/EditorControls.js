@@ -147,8 +147,18 @@ THREE.EditorControls = function ( object, domElement ) {
 
 	}
 
+    function rotateAroundWorldAxis(object, axis, radians) {
+        rotWorldMatrix = new THREE.Matrix4();
+        rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
+        rotWorldMatrix.multiply(object.matrix);                // pre-multiply
+        object.matrix = rotWorldMatrix;
+        object.rotation.setFromRotationMatrix(object.matrix);
+    }
+    
 	function onMouseMove( event ) {
-
+        //var myObject = scene.getObjectByName(sceneObjectName);
+        console.log(loadedObject.rotation);
+        
 		if ( scope.enabled === false ) return;
 
 		event.preventDefault();
@@ -239,14 +249,14 @@ THREE.EditorControls = function ( object, domElement ) {
 			case 82: /*R*/ moveState.up = 1; break;
 			case 70: /*F*/ moveState.down = 1; break;
 
-			case 87: /*W*/ moveState.pitchUp = 1; break;
-			case 83: /*S*/ moveState.pitchDown = 1; break;
+			case 83: /*S*/ moveState.pitchUp = 1; break;
+			case 87: /*W*/ moveState.pitchDown = 1; break;
 
-			case 65: /*A*/ moveState.yawLeft = 1; break;
-			case 68: /*D*/ moveState.yawRight = 1; break;
+			case 68: /*D*/ moveState.yawLeft = 1; break;
+			case 65: /*A*/ moveState.yawRight = 1; break;
 
-			case 81: /*Q*/ moveState.rollLeft = 1; break;
-			case 69: /*E*/ moveState.rollRight = 1; break;
+			case 69: /*E*/ moveState.rollLeft = 1; break;
+			case 81: /*Q*/ moveState.rollRight = 1; break;
 		}
         
         updateMovementVector();
@@ -268,14 +278,14 @@ THREE.EditorControls = function ( object, domElement ) {
 			case 82: /*R*/ moveState.up = 0; break;
 			case 70: /*F*/ moveState.down = 0; break;
 
-			case 87: /*W*/ moveState.pitchUp = 0; break;
-			case 83: /*S*/ moveState.pitchDown = 0; break;
+			case 83: /*S*/ moveState.pitchUp = 0; break;
+			case 87: /*W*/ moveState.pitchDown = 0; break;
 
-			case 65: /*A*/ moveState.yawLeft = 0; break;
-			case 68: /*D*/ moveState.yawRight = 0; break;
+			case 68: /*D*/ moveState.yawLeft = 0; break;
+			case 65: /*A*/ moveState.yawRight = 0; break;
 
-			case 81: /*Q*/ moveState.rollLeft = 0; break;
-			case 69: /*E*/ moveState.rollRight = 0; break;
+			case 69: /*E*/ moveState.rollLeft = 0; break;
+			case 81: /*Q*/ moveState.rollRight = 0; break;
 
 		}
         
@@ -290,18 +300,23 @@ THREE.EditorControls = function ( object, domElement ) {
 		moveVector.x = ( -moveState.left    + moveState.right );
 		moveVector.y = ( -moveState.down    + moveState.up );
 		moveVector.z = ( -forward + moveState.back );
-        scope.pan( new THREE.Vector3( moveVector.x * 8, moveVector.y * 8, moveVector.z * 8) );
+        scope.pan( new THREE.Vector3( moveVector.x * 4, moveVector.y * 4, moveVector.z * 4) );
 
 	}
     
     function updateRotationVector () {
-
+        
 		rotationVector.x = ( -moveState.pitchDown + moveState.pitchUp );
 		rotationVector.y = ( -moveState.yawRight  + moveState.yawLeft );
 		rotationVector.z = ( -moveState.rollRight + moveState.rollLeft );
         
-        scope.rotate( new THREE.Vector3( - rotationVector.x * 0.05, - rotationVector.y * 0.05, rotationVector.z * 0.05) );
-
+        //scope.rotate( new THREE.Vector3( - rotationVector.x * 0.05, - rotationVector.y * 0.05, rotationVector.z * 0.05) );
+        var axis = new THREE.Vector3(1,0,0);
+        myCamera.rotateOnAxis(axis, - rotationVector.x * 0.02);
+        axis = new THREE.Vector3(0,1,0);
+        myCamera.rotateOnAxis(axis, - rotationVector.y * 0.02);
+        axis = new THREE.Vector3(0,0,1);
+        myCamera.rotateOnAxis(axis, - rotationVector.z * 0.02);
 	}
     
 	// touch
