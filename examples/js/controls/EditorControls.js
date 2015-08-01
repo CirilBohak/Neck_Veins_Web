@@ -89,7 +89,7 @@ THREE.EditorControls = function ( object, domElement ) {
 	};
 
 	this.rotate = function ( delta ) {
-
+        
 		vector.copy( object.position ).sub( center );
 
 		var theta = Math.atan2( vector.x, vector.z );
@@ -110,7 +110,7 @@ THREE.EditorControls = function ( object, domElement ) {
         //console.log(vector);
 		object.position.copy( center ).add( vector );
 
-		object.lookAt( center );
+		  object.lookAt( center );
 
 		scope.dispatchEvent( changeEvent );
 
@@ -157,7 +157,7 @@ THREE.EditorControls = function ( object, domElement ) {
     
 	function onMouseMove( event ) {
         //var myObject = scene.getObjectByName(sceneObjectName);
-        console.log(loadedObject.rotation);
+        //console.log(loadedObject.rotation);
         
 		if ( scope.enabled === false ) return;
 
@@ -170,7 +170,15 @@ THREE.EditorControls = function ( object, domElement ) {
 
 		if ( state === STATE.ROTATE ) {
 
-			scope.rotate( new THREE.Vector3( - movementX * 0.005, - movementY * 0.005, 0 ) );
+			//scope.rotate( new THREE.Vector3( - movementX * 0.005, - movementY * 0.005, 0 ) );
+            
+            var axis = new THREE.Vector3(0,1,0);
+            sceneObject.rotateOnAxis(axis,  movementX * 0.005);
+            axis = new THREE.Vector3(1,0,0);
+            sceneObject.rotateOnAxis(axis,  movementY * 0.005);
+            scope.dispatchEvent( changeEvent );
+            //scope.rotate( new THREE.Vector3(0, 0, 0 ) );
+            
 
 		} else if ( state === STATE.ZOOM ) {
 
