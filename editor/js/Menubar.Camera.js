@@ -22,7 +22,7 @@ Menubar.Camera = function ( editor ) {
 	option.setClass( 'option' );
 	option.setTextContent( 'reset' );
 	option.onClick( function () {
-        if(cameraStartPosition == null){
+        if(typeof sceneObject === 'undefined'){
             alert("Please import an object first.");
         }
         else{

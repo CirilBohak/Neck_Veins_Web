@@ -108,7 +108,7 @@ THREE.EditorControls = function ( object, domElement ) {
 		vector.x = radius * Math.sin( phi ) * Math.sin( theta );
 		vector.y = radius * Math.cos( phi );
 		vector.z = radius * Math.sin( phi ) * Math.cos( theta );
-        //console.log(vector);
+
 		object.position.copy( center ).add( vector );
 
 		  object.lookAt( center );
@@ -159,11 +159,7 @@ THREE.EditorControls = function ( object, domElement ) {
 
 			state = STATE.ZOOM;
 
-		} /*else if ( event.button === 2 ) {
-
-			state = STATE.PAN;
-
-		}*/
+		} 
 
 		pointerOld.set( event.clientX, event.clientY );
 
@@ -242,60 +238,6 @@ THREE.EditorControls = function ( object, domElement ) {
 		rotateEndPoint = rotateStartPoint;
 	}
     
-    //functions for trackball controls
-    /*function getMouseOnScreen(pageX, pageY){
-		var vector = new THREE.Vector2();
-        
-        
-        var box = domElement.getBoundingClientRect();
-        // adjustments come from similar code in the jquery offset() function
-        var d = domElement.ownerDocument.documentElement;
-        this.screen.left = box.left + window.pageXOffset - d.clientLeft;
-        this.screen.top = box.top + window.pageYOffset - d.clientTop;
-        this.screen.width = box.width;
-        this.screen.height = box.height;
-        
-        vector.set(
-            ( pageX - this.screen.left ) / this.screen.width,
-            ( pageY - this.screen.top ) / this.screen.height
-        );
-        return vector;
-	}
-    
-    function getMouseProjectionOnBall (myObject, pageX, pageY) {
-
-		var vector = new THREE.Vector3();
-		var objectUp = new THREE.Vector3();
-		var mouseOnBall = new THREE.Vector3();
-
-        mouseOnBall.set(
-            ( pageX - this.screen.width * 0.5 - this.screen.left ) / (this.screen.width*.5),
-            ( this.screen.height * 0.5 + this.screen.top - pageY ) / (this.screen.height*.5),
-            0.0
-        );
-
-        var length = mouseOnBall.length();
-
-        if ( length > 1.0 ) {
-
-            mouseOnBall.normalize();
-
-        } else {
-
-            mouseOnBall.z = Math.sqrt( 1.0 - length * length );
-
-        }
-        var eye = new THREE.Vector3(),
-            target = new THREE.Vector3();
-        eye.copy( myObject.position ).sub( target );
-        console.log(eye);
-        vector.copy( myObject.up ).setLength( mouseOnBall.y );
-        
-        vector.add( objectUp.copy( myObject.up ).cross( eye ).setLength( mouseOnBall.x ) );
-        vector.add( eye.setLength( mouseOnBall.z ) );
-        return vector;
-
-	}*/
     
     function rotateAroundWorldAxis(object, axis, radians) {
         rotWorldMatrix = new THREE.Matrix4();
@@ -330,28 +272,6 @@ THREE.EditorControls = function ( object, domElement ) {
 		var movementY = pointer.y - pointerOld.y;
 
 		if ( state === STATE.ROTATE ) {
-
-            /*var deltaMove = {
-                x: event.offsetX - previousMousePosition.x,
-                y: event.offsetY - previousMousePosition.y
-            };
-            
-            if(isDragging){
-                var deltaRotationQuaternion = new THREE.Quaternion()
-                    .setFromEuler(new THREE.Euler(
-                        deltaMove.y * 1 * Math.PI / 180,
-                        deltaMove.x * 1 * Math.PI / 180,
-                        0,
-                        'XYZ'
-                    ));
-            }
-            
-            sceneObject.quaternion.multiplyQuaternions(deltaRotationQuaternion, sceneObject.quaternion);
-            
-            previousMousePosition = {
-                x: event.offsetX,
-                y: event.offsetY
-            };*/
             
             deltaX = event.x - startPoint.x;
             deltaY = event.y - startPoint.y;
@@ -365,25 +285,12 @@ THREE.EditorControls = function ( object, domElement ) {
             
             scope.dispatchEvent(changeEvent);
             
-			//scope.rotate( new THREE.Vector3( - movementX * 0.005, - movementY * 0.005, 0 ) );
-            
-            /*var axis = new THREE.Vector3(0,1,0);
-            rotateAroundObjectAxis(sceneObject, axis, Math.PI / 180 * movementX * 0.5);   //pi/180 = 
-            axis = new THREE.Vector3(1,0,0);
-            rotateAroundObjectAxis(sceneObject, axis, Math.PI / 180 * movementY * 0.5);
-            scope.dispatchEvent( changeEvent );*/
-            
-            
 
 		} else if ( state === STATE.ZOOM ) {
 
 			scope.zoom( new THREE.Vector3( 0, 0, movementY ) );
 
-		} /*else if ( state === STATE.PAN ) {
-
-			scope.pan( new THREE.Vector3( - movementX, movementY, 0 ) );
-
-		}*/
+		} 
 
 		pointerOld.set( event.clientX, event.clientY );
 
@@ -409,8 +316,6 @@ THREE.EditorControls = function ( object, domElement ) {
 	function onMouseWheel( event ) {
 
 		event.preventDefault();
-
-		// if ( scope.enabled === false ) return;
 
 		var delta = 0;
 
@@ -519,7 +424,6 @@ THREE.EditorControls = function ( object, domElement ) {
 		rotationVector.y = ( -moveState.yawRight  + moveState.yawLeft );
 		rotationVector.z = ( -moveState.rollRight + moveState.rollLeft );
         
-        //scope.rotate( new THREE.Vector3( - rotationVector.x * 0.05, - rotationVector.y * 0.05, rotationVector.z * 0.05) );
         var axis = new THREE.Vector3(1,0,0);
         myCamera.rotateOnAxis(axis, - rotationVector.x * 0.02);
         axis = new THREE.Vector3(0,1,0);

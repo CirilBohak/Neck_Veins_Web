@@ -238,17 +238,6 @@ var Viewport = function ( editor ) {
 
 	} );
     
-    /*var flyControls = new THREE.FlyControls(camera, container.dom);
-    flyControls.movementSpeed = 25;
-    flyControls.rollSpeed = Math.PI / 24;
-    flyControls.autoForward = true;
-    flyControls.dragToLook = true;
-    flyControls.updateCamera = function(){
-        transformControls.update();
-		signals.cameraChanged.dispatch( camera );
-    }*/
-
-	// signals
 
 	signals.editorCleared.add( function () {
         if(controls.center != null)
@@ -336,11 +325,6 @@ var Viewport = function ( editor ) {
         var lookAtVector = new THREE.Vector3( 0, 0, -1 );
         lookAtVector.applyQuaternion(camera.quaternion);
         
-        // reposition the light to cameras position
-        //var sceneLight = scene.getObjectByName('InitPointLight');
-        //sceneLight.position.set(camera.position.x, camera.position.y, camera.position.z);
-        
-        // reposition the light to cameras position using the cameras lookAtVector
         var sceneLight = scene.getObjectByName('InitPointLight');
         var x = camera.position.x - lookAtVector.x * 10;
         var y = camera.position.y - lookAtVector.y * 10;
@@ -699,17 +683,7 @@ var Viewport = function ( editor ) {
 	function animate() {
         
 		requestAnimationFrame( animate );
-        /*if(controls.left == true){
-            /*editor.camera.translateX(100);
-            //console.log(editor.camera.position);
-            var lookAtVector = new THREE.Vector3( 0, 0, -1 );
-            lookAtVector.applyQuaternion(editor.camera.quaternion);
-            lookAtVector.setX(lookAtVector.x + 100)
-            console.log(lookAtVector);
-            controls.target.set(-1,0,0);
-            editor.camera.lookAt(new THREE.Vector3(1000,0,0)); */ 
-        //}
-		// animations
+
         
 		if ( THREE.AnimationHandler.animations.length > 0 ) {
 

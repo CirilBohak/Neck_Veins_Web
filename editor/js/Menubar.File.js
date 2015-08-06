@@ -26,6 +26,7 @@ Menubar.File = function ( editor ) {
 		if ( confirm( 'Any unsaved data will be lost. Are you sure?' ) ) {
 
 			editor.clear();
+            delete sceneObject;
 
 		}
 
