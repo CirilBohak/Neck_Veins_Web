@@ -316,11 +316,19 @@ var Loader = function ( editor ) {
                     var i = 0;
                     while(i < contents.length){
                         switch (contents[i]) {
+                            case "ObjectType":
+                                i++;
+                                break;
+                            case "NDims":
+                                i++;
+                                break;
                             case "DimSize":
                                 mhdContent.Nx = parseInt(contents[i+1]);
                                 mhdContent.Ny = parseInt(contents[i+2]);
                                 mhdContent.Nz = parseInt(contents[i+3]);
+                                console.log("dim size before : " + i);
                                 i+=3;
+                                console.log("dim size after : " + i);
                                 break;
                             case "ElementSpacing":
                                 mhdContent.dx = parseFloat(contents[i+1]);
@@ -335,22 +343,36 @@ var Loader = function ( editor ) {
                                 i+=3;
                                 break;
                             case "Orientation":
-                                mhdContent.rotationMatrix = new THREE.Matrix4;
-                                 // you need to fill this 
+                                mhdContent.rotationMatrix = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+                                for(var j = 0; j < 4; j++){
+                                    for(var k = 0; k < 4; k++){
+                                        if(j >= 3 || k >= 3){
+                                            mhdContent.rotationMatrix[j][k] = ((j == k) ? 1 : 0);
+                                        }
+                                        else{
+                                            mhdContent.rotationMatrix[j][k] = parseFloat(contents[i+1]);
+                                            i+=1;
+                                        }
+                                    }
+                                }
+                                for(var j = 0; j < 4; j++){
+                                    //console.log("row number " + j + ":   " + mhdContent.rotationMatrix[j][0] + " " + mhdContent.rotationMatrix[j][1] + " " + mhdContent.rotationMatrix[j][2] + " " + mhdContent.rotationMatrix[j][3]);
+                                }
                                 break;
                             case "AnatomicalOrientation":
-                                i+=1;;
+                                i+=1;
                                 break;
                             case "ElementByteOrderMSB":
-                                mhdContent.elementByteOrder = contents.[i+1]; // What kind of boolean? 
+                                mhdContent.elementByteOrder = (( "false" == contents[i+1].toLowerCase()) ? false : true);
                                 i+=1;
                                 break;
                             case "ElementType":
-                                mhdContent.ele = contents.[i+1]; // check again 
+                                mhdContent.elementType = contents[i+1]; 
                                 i+=1;
                                 break;
                             case "ElementDataFile":
-                                // fill this 
+                                mhdContent.rawFile = contents[i+1]; 
+                                i+=1; 
                                 break;
                         }
                         i++;
