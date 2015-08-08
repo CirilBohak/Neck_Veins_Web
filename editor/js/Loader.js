@@ -192,7 +192,7 @@ var Loader = function ( editor ) {
 				reader.readAsText( file );
 
 				break;
-
+            /* New and changed obj reader for this project */
 			case 'obj':
                 
 				var reader = new FileReader();
@@ -296,12 +296,76 @@ var Loader = function ( editor ) {
 				reader.readAsText( file );
 
 				break;
-
+                
+            case 'mhd':
+                var reader = new FileReader();
+                reader.addEventListener( 'load', function (event) {
+                    var contents = event.target.result;
+                    mhdContent = {
+                        Nx: null, Ny: null, Nz: null, // int
+                        dx: null, dy: null, dz: null, // double
+                        tx: null, ty: null, tz: null, // double
+                        rotationMatrix: null, // double matrix 4x4
+                        elementByteOrder: null, // boolean
+                        elementType: null, //string
+                        rawFile: null // string
+                    };
+                    
+                    
+                    contents = contents.replace(/=/g,' ').replace(/\s\s+/g, ' ').trim().split( " " );
+                    var i = 0;
+                    while(i < contents.length){
+                        switch (contents[i]) {
+                            case "DimSize":
+                                mhdContent.Nx = parseInt(contents[i+1]);
+                                mhdContent.Ny = parseInt(contents[i+2]);
+                                mhdContent.Nz = parseInt(contents[i+3]);
+                                i+=3;
+                                break;
+                            case "ElementSpacing":
+                                mhdContent.dx = parseFloat(contents[i+1]);
+                                mhdContent.dy = parseFloat(contents[i+2]);
+                                mhdContent.dz = parseFloat(contents[i+3]);
+                                i+=3;
+                                break;
+                            case "Position":
+                                mhdContent.tx = parseFloat(contents[i+1]);
+                                mhdContent.ty = parseFloat(contents[i+2]);
+                                mhdContent.tz = parseFloat(contents[i+3]);
+                                i+=3;
+                                break;
+                            case "Orientation":
+                                mhdContent.rotationMatrix = new THREE.Matrix4;
+                                 // you need to fill this 
+                                break;
+                            case "AnatomicalOrientation":
+                                i+=1;;
+                                break;
+                            case "ElementByteOrderMSB":
+                                mhdContent.elementByteOrder = contents.[i+1]; // What kind of boolean? 
+                                i+=1;
+                                break;
+                            case "ElementType":
+                                mhdContent.ele = contents.[i+1]; // check again 
+                                i+=1;
+                                break;
+                            case "ElementDataFile":
+                                // fill this 
+                                break;
+                        }
+                        i++;
+                    }
+                    
+                }, false);
+                reader.readAsText( file );
+                                        
+                break;
+                
 			case 'ply':
 
 				var reader = new FileReader();
 				reader.addEventListener( 'load', function ( event ) {
-
+                    
 					var contents = event.target.result;
 
 					var geometry = new THREE.PLYLoader().parse( contents );
