@@ -16,11 +16,24 @@ var Loader = function ( editor ) {
 	var scope = this;
 	var signals = editor.signals;
 
-	this.loadFile = function ( file ) {
-        
+	this.loadFile = function ( file, file1 ) {
+        var supportedExtensions = ['awd', 'babylon', 'babylonmeshdata', 'ctm', 'dae', 'js', 'json', '3geo', '3mat', '3obj', '3scn', 'obj', 'mhd', 'ply', 'stl', 'vtk'];
 		var filename = file.name;
 		var extension = filename.split( '.' ).pop().toLowerCase();
+        if(typeof file1 != 'undefined'){
+            var filenameRaw = file1.name;
+            var extensionRaw = filenameRaw.split( '.' ).pop().toLowerCase();
 
+            var buffer;
+            if(supportedExtensions.indexOf(extensionRaw) > -1 && supportedExtensions.indexOf(extension) < 0){
+                buffer = file;
+                file = file1;
+                file1 = buffer;
+                buffer = extension;
+                extension = extensionRaw;
+                extensionRaw = buffer;
+            }
+        }
 		switch ( extension ) {
 
 			case 'awd':
@@ -298,89 +311,98 @@ var Loader = function ( editor ) {
 				break;
                 
             case 'mhd':
-                var reader = new FileReader();
-                reader.addEventListener( 'load', function (event) {
-                    var contents = event.target.result;
-                    mhdContent = {
-                        Nx: null, Ny: null, Nz: null, // int
-                        dx: null, dy: null, dz: null, // double
-                        tx: null, ty: null, tz: null, // double
-                        rotationMatrix: null, // double matrix 4x4
-                        elementByteOrder: null, // boolean
-                        elementType: null, //string
-                        rawFile: null // string
-                    };
-                    
-                    
-                    contents = contents.replace(/=/g,' ').replace(/\s\s+/g, ' ').trim().split( " " );
-                    var i = 0;
-                    while(i < contents.length){
-                        switch (contents[i]) {
-                            case "ObjectType":
-                                i++;
-                                break;
-                            case "NDims":
-                                i++;
-                                break;
-                            case "DimSize":
-                                mhdContent.Nx = parseInt(contents[i+1]);
-                                mhdContent.Ny = parseInt(contents[i+2]);
-                                mhdContent.Nz = parseInt(contents[i+3]);
-                                console.log("dim size before : " + i);
-                                i+=3;
-                                console.log("dim size after : " + i);
-                                break;
-                            case "ElementSpacing":
-                                mhdContent.dx = parseFloat(contents[i+1]);
-                                mhdContent.dy = parseFloat(contents[i+2]);
-                                mhdContent.dz = parseFloat(contents[i+3]);
-                                i+=3;
-                                break;
-                            case "Position":
-                                mhdContent.tx = parseFloat(contents[i+1]);
-                                mhdContent.ty = parseFloat(contents[i+2]);
-                                mhdContent.tz = parseFloat(contents[i+3]);
-                                i+=3;
-                                break;
-                            case "Orientation":
-                                mhdContent.rotationMatrix = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
-                                for(var j = 0; j < 4; j++){
-                                    for(var k = 0; k < 4; k++){
-                                        if(j >= 3 || k >= 3){
-                                            mhdContent.rotationMatrix[j][k] = ((j == k) ? 1 : 0);
-                                        }
-                                        else{
-                                            mhdContent.rotationMatrix[j][k] = parseFloat(contents[i+1]);
-                                            i+=1;
+                if(typeof file1 === 'undefined'){
+                    alert("You have to select a mhd file and its corresponding raw file in order for us to open the 3D model.");
+                }
+                else{
+                    var reader = new FileReader();
+                    reader.addEventListener( 'load', function (event) {
+                        var contents = event.target.result;
+                        mhdContent = {
+                            Nx: null, Ny: null, Nz: null, // int
+                            dx: null, dy: null, dz: null, // double
+                            tx: null, ty: null, tz: null, // double
+                            rotationMatrix: null, // double matrix 4x4
+                            elementByteOrder: null, // boolean
+                            elementType: null, //string
+                            rawFile: null // string
+                        };
+
+
+                        contents = contents.replace(/=/g,' ').replace(/\s\s+/g, ' ').trim().split( " " );
+                        var i = 0;
+                        while(i < contents.length){
+                            switch (contents[i]) {
+                                case "ObjectType":
+                                    i++;
+                                    break;
+                                case "NDims":
+                                    i++;
+                                    break;
+                                case "DimSize":
+                                    mhdContent.Nx = parseInt(contents[i+1]);
+                                    mhdContent.Ny = parseInt(contents[i+2]);
+                                    mhdContent.Nz = parseInt(contents[i+3]);
+                                    console.log("dim size before : " + i);
+                                    i+=3;
+                                    console.log("dim size after : " + i);
+                                    break;
+                                case "ElementSpacing":
+                                    mhdContent.dx = parseFloat(contents[i+1]);
+                                    mhdContent.dy = parseFloat(contents[i+2]);
+                                    mhdContent.dz = parseFloat(contents[i+3]);
+                                    i+=3;
+                                    break;
+                                case "Position":
+                                    mhdContent.tx = parseFloat(contents[i+1]);
+                                    mhdContent.ty = parseFloat(contents[i+2]);
+                                    mhdContent.tz = parseFloat(contents[i+3]);
+                                    i+=3;
+                                    break;
+                                case "Orientation":
+                                    mhdContent.rotationMatrix = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+                                    for(var j = 0; j < 4; j++){
+                                        for(var k = 0; k < 4; k++){
+                                            if(j >= 3 || k >= 3){
+                                                mhdContent.rotationMatrix[j][k] = ((j == k) ? 1 : 0);
+                                            }
+                                            else{
+                                                mhdContent.rotationMatrix[j][k] = parseFloat(contents[i+1]);
+                                                i+=1;
+                                            }
                                         }
                                     }
-                                }
-                                for(var j = 0; j < 4; j++){
-                                    //console.log("row number " + j + ":   " + mhdContent.rotationMatrix[j][0] + " " + mhdContent.rotationMatrix[j][1] + " " + mhdContent.rotationMatrix[j][2] + " " + mhdContent.rotationMatrix[j][3]);
-                                }
-                                break;
-                            case "AnatomicalOrientation":
-                                i+=1;
-                                break;
-                            case "ElementByteOrderMSB":
-                                mhdContent.elementByteOrder = (( "false" == contents[i+1].toLowerCase()) ? false : true);
-                                i+=1;
-                                break;
-                            case "ElementType":
-                                mhdContent.elementType = contents[i+1]; 
-                                i+=1;
-                                break;
-                            case "ElementDataFile":
-                                mhdContent.rawFile = contents[i+1]; 
-                                i+=1; 
-                                break;
+                                    for(var j = 0; j < 4; j++){
+                                        //console.log("row number " + j + ":   " + mhdContent.rotationMatrix[j][0] + " " + mhdContent.rotationMatrix[j][1] + " " + mhdContent.rotationMatrix[j][2] + " " + mhdContent.rotationMatrix[j][3]);
+                                    }
+                                    break;
+                                case "AnatomicalOrientation":
+                                    i+=1;
+                                    break;
+                                case "ElementByteOrderMSB":
+                                    mhdContent.elementByteOrder = (( "false" == contents[i+1].toLowerCase()) ? false : true);
+                                    i+=1;
+                                    break;
+                                case "ElementType":
+                                    mhdContent.elementType = contents[i+1]; 
+                                    i+=1;
+                                    break;
+                                case "ElementDataFile":
+                                    mhdContent.rawFile = contents[i+1]; 
+                                    i+=1; 
+                                    break;
+                            }
+                            i++;
                         }
-                        i++;
-                    }
-                    
-                }, false);
-                reader.readAsText( file );
-                                        
+                        if(mhdContent.rawFile != file1.name){
+                            alert("The second file does not match the raw file defined in the mhd file.");    
+                        }else{
+                            //get content of second file and initiate kernel    
+                        }
+
+                    }, false);
+                    reader.readAsText( file );
+                }
                 break;
                 
 			case 'ply':

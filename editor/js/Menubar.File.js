@@ -40,9 +40,19 @@ Menubar.File = function ( editor ) {
 	// Import
 
 	var fileInput = document.createElement( 'input' );
+    fileInput.setAttribute("multiple",true);
+    
 	fileInput.type = 'file';
 	fileInput.addEventListener( 'change', function ( event ) {
-		editor.loader.loadFile( fileInput.files[ 0 ] );
+        
+        var files = fileInput.files;
+        if(fileInput.files.length > 2)
+            alert("You can select only 2 files");
+		else{
+            editor.clear();
+            delete sceneObject;
+            editor.loader.loadFile( fileInput.files[ 0 ], fileInput.files[1]);
+        }
         fileInput.value = "";
 
 	} );
@@ -51,8 +61,7 @@ Menubar.File = function ( editor ) {
 	option.setClass( 'option' );
 	option.setTextContent( 'Import' );
 	option.onClick( function () {
-		fileInput.click();
-
+        fileInput.click();
 	} );
 	options.add( option );
 
