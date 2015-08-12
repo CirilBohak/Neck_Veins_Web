@@ -317,6 +317,7 @@ var Loader = function ( editor ) {
                 else{
                     var reader = new FileReader();
                     reader.addEventListener( 'load', function (event) {
+                        
                         var contents = event.target.result;
                         mhdContent = {
                             Nx: null, Ny: null, Nz: null, // int
@@ -397,10 +398,27 @@ var Loader = function ( editor ) {
                         if(mhdContent.rawFile != file1.name){
                             alert("The second file does not match the raw file defined in the mhd file.");    
                         }else{
-                            //get content of second file and initiate kernel    
+                            //get content of second file and initiate kernel   
+                            
+                            //FileReader.readAsBinaryString(Blob|File): The result property will contain the file/blob's data as a binary string. Every byte is represented by an integer in the range of 0 to 255.
+                            start = 0;
+                            end = file1.size; // this is a blob 
+                            rawDataFromFile = "";
+                            // start and end byte 
+                            rawReader.readAsBinaryString(file1);
+                            
                         }
 
                     }, false);
+                    
+                    var rawReader = new FileReader();
+                    
+                    rawReader.addEventListener( 'load', function (event) {
+                        var rawData = event.target.result;
+                        marchingCubesInit(mhdContent, rawData);
+
+                    }, false);
+                    
                     reader.readAsText( file );
                 }
                 break;
@@ -641,4 +659,8 @@ var Loader = function ( editor ) {
 
 	};
 
+}
+
+function marchingCubesInit(mhdData, rawData){
+    console.log("mhdData: " + mhdData.rawFile + " rawData " + rawData.length);
 }
