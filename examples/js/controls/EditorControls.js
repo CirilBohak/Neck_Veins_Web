@@ -223,7 +223,7 @@ THREE.EditorControls = function ( object, domElement ) {
         
          var cameraInvQuaternion = new THREE.Quaternion(myCamera.quaternion.x, myCamera.quaternion.y, myCamera.quaternion.z, myCamera.quaternion.w);
         var cameraInvQuaternion = cameraInvQuaternion.inverse();
-        console.log(cameraQuaternion);
+        //console.log(cameraQuaternion);
         
         
 		var rotateQuaternion = rotateMatrix(rotateStartPoint, rotateEndPoint);
@@ -273,13 +273,13 @@ THREE.EditorControls = function ( object, domElement ) {
 
 		if ( state === STATE.ROTATE ) {
             
-            deltaX = event.x - startPoint.x;
-            deltaY = event.y - startPoint.y;
+            deltaX = event.clientX - startPoint.x;
+            deltaY = event.clientY - startPoint.y;
 
             handleRotation();
 
-            startPoint.x = event.x;
-            startPoint.y = event.y;
+            startPoint.x = event.clientX;
+            startPoint.y = event.clientY;
 
             lastMoveTimestamp = new Date();
             
@@ -299,8 +299,8 @@ THREE.EditorControls = function ( object, domElement ) {
 	function onMouseUp( event ) {
         if (new Date().getTime() - lastMoveTimestamp.getTime() > moveReleaseTimeDelta)
 		{
-			deltaX = event.x - startPoint.x;
-			deltaY = event.y - startPoint.y;
+			deltaX = event.clientX - startPoint.x;
+			deltaY = event.clientY - startPoint.y;
 		}
 
 		mouseDown = false;
