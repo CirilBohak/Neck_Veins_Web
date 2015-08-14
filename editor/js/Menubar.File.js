@@ -45,6 +45,7 @@ Menubar.File = function ( editor ) {
 	fileInput.type = 'file';
 	fileInput.addEventListener( 'change', function ( event ) {
         
+        
         var files = fileInput.files;
         if(fileInput.files.length > 2)
             alert("You can select only 2 files");
