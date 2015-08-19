@@ -328,6 +328,9 @@ var Loader = function ( editor ) {
                             elementType: null, //string
                             rawFile: null // string
                         };
+                        
+                        //matrixSize = contents.length;
+                        //alert(matrixSize);
 
 
                         contents = contents.replace(/=/g,' ').replace(/\s\s+/g, ' ').trim().split( " " );
@@ -405,6 +408,7 @@ var Loader = function ( editor ) {
                             end = file1.size; // this is a blob 
                             rawDataFromFile = "";
                             // start and end byte 
+                            console.log("going in");
                             rawReader.readAsBinaryString(file1);
                             
                         }
@@ -415,7 +419,9 @@ var Loader = function ( editor ) {
                     
                     rawReader.addEventListener( 'load', function (event) {
                         var rawData = event.target.result;
+                        console.log("going into init");
                         marchingCubesInit(mhdContent, rawData);
+                        
 
                     }, false);
                     
@@ -677,15 +683,93 @@ function marchingCubesInit(mhdData, rawData){
     // that WebCL is not available.
     
     try {
+        
+        console.log("started");
+        
+        // init basic stuff
         var platforms = webcl.getPlatforms();
         var devices = [];
         for (var i in platforms) {
             var plat = platforms[i];
             devices[i] = plat.getDevices();
         }
-        alert("Excellent! Your system does support WebCL.");
+        
+        var singleDevice = devices[0][0];
+        //alert(singleDevice.getInfo(WebCL.DEVICE_NAME));
+        
+        var ctx = webcl.createContext ();
+        var cmdQueue = ctx.createCommandQueue(singleDevice);
+        
+        var bufIn1 = ctx.createBuffer (WebCL.MEM_READ_WRITE, 4);
+        
+
+        //build kernel
+        var kernelSrc = loadKernel("clMarchingCubes");
+        var program = ctx.createProgram(kernelSrc);
+        var device = ctx.getInfo(WebCL.CONTEXT_DEVICES)[0];
+
+        try {
+          program.build ([device], "");
+        } catch(e) {
+          alert ("Failed to build WebCL program. Error "
+                 + program.getBuildInfo (device, 
+                                                WebCL.PROGRAM_BUILD_STATUS)
+                 + ":  " 
+                 + program.getBuildInfo (device, 
+                                                WebCL.PROGRAM_BUILD_LOG));
+          throw e;
+        }
+        
+        
+        //var matrix1D = new Array(rawData.length/2),
+        var matrix1D = new ArrayBuffer(rawData.length),
+            buffer1,
+            buffer2,
+            i = 0,
+            j = 0;
+        
+        var int16View = new Int16Array(matrix1D);
+        
+        console.log("calculatig ...");
+        console.log(matrix1D.byteLength );
+        
+        while(i < rawData.length){
+            buffer1 = rawData[i].charCodeAt(0);
+            buffer2 = rawData[i+1].charCodeAt(0);
+            buffer2<<=8;
+            buffer2+=buffer1;
+            int16View[j] = buffer2;
+            j = j + 1;
+            i = i + 2;
+        }
+        delete rawData;
+        for(var i = 54881318/2; i < 54881330/2; i++)
+            console.log(int16View[i].toString(2));
+        console.log(matrix1D.byteLength );
+        var sigma = 50/100;
+        var threshold = 50/100;
+        
+        var gaussSize = Math.floor(2 * Math.ceil(3 * sigma / mhdContent.dx) + 1);
+        var dimensions = new Array( mhdContent.Nx , mhdContent.Ny , mhdContent.Nz, gaussSize );
+        
+        alert("jaj");
+        
     } catch (e) {
-        alert("Unfortunately platform or device inquiry failed.");
+        alert(e.message);
     }
     
 }
+
+// returns the kernel source code
+function loadKernel(id){
+  var kernelElement = document.getElementById(id);
+  var kernelSource = kernelElement.text;
+  if (kernelElement.src != "") {
+      var mHttpReq = new XMLHttpRequest();
+      mHttpReq.open("GET", kernelElement.src, false);
+      mHttpReq.send(null);
+      kernelSource = mHttpReq.responseText;
+  } 
+  return kernelSource;
+}
+      

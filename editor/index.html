@@ -274,6 +274,22 @@
 			}
 
 		</script>
+        
+        <!-- webcl kernel -->
+        <script id="clMarchingCubes" type="text/x-opencl">
+            kernel void ckVectorAdd(global uint* vectorIn1,
+                                    global uint* vectorIn2,
+                                    global uint* vectorOut,
+                                    uint uiVectorWidth) {
+                uint x = get_global_id(0);
+                if (x >= uiVectorWidth)
+                {
+                    return;
+                }
+                // add the vector elements
+                vectorOut[x] = vectorIn1[x] + vectorIn2[x];
+            }
+        </script>
         <div id="container">
             <div id="help"></div>
             <div id="licensing"></div>
