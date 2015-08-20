@@ -728,31 +728,53 @@ function marchingCubesInit(mhdData, rawData){
             i = 0,
             j = 0;
         
-        var int16View = new Int16Array(matrix1D);
+        var matrix1DView = new Int16Array(matrix1D);
         
         console.log("calculatig ...");
         console.log(matrix1D.byteLength );
-        
-        while(i < rawData.length){
+        var rawLenght = rawData.length;
+        while(i < rawLenght){
             buffer1 = rawData[i].charCodeAt(0);
             buffer2 = rawData[i+1].charCodeAt(0);
             buffer2<<=8;
             buffer2+=buffer1;
-            int16View[j] = buffer2;
+            matrix1DView[j] = buffer2;
             j = j + 1;
             i = i + 2;
         }
         delete rawData;
         for(var i = 54881318/2; i < 54881330/2; i++)
-            console.log(int16View[i].toString(2));
+            console.log(matrix1DView[i].toString(2));
         console.log(matrix1D.byteLength );
+        
         var sigma = 50/100;
         var threshold = 50/100;
         
         var gaussSize = Math.floor(2 * Math.ceil(3 * sigma / mhdContent.dx) + 1);
         var dimensions = new Array( mhdContent.Nx , mhdContent.Ny , mhdContent.Nz, gaussSize );
         
+        
+        // locateMemory for dimensions
+        var buffer = new ArrayBuffer(dimensions.length * 4); //float has 4 bytes, it's a float buffer
+        
+        var bufferView = new Float32Array(buffer);
+        
+        var memory = ctx.createBuffer(webcl.MEM_READ_WRITE, dimensions.length * 4);
+        
+        for(i = 0; i < dimensions.length; i++)
+            bufferView[i] = dimensions[i];
+        
+        // Write the buffer to OpenCL device memory
+        cmdQueue.enqueueWriteBuffer(memory, false, 0, dimensions.length * 4, bufferView);
+        
+        
+        // locateMemory for Matrix
+        var memory1 = ctx.createBuffer(webcl.MEM_READ_WRITE, rawLenght);
+        cmdQueue.enqueueWriteBuffer(memory1, false, 0, rawLenght, matrix1DView);
+        
         alert("jaj");
+        
+        webcl.releaseAll();
         
     } catch (e) {
         alert(e.message);
