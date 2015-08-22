@@ -699,15 +699,13 @@ function marchingCubesInit(mhdData, rawData){
         
         var ctx = webcl.createContext ();
         var cmdQueue = ctx.createCommandQueue(singleDevice);
-        
-        var bufIn1 = ctx.createBuffer (WebCL.MEM_READ_WRITE, 4);
-        
-
-        //build kernel
-        var kernelSrc = loadKernel("clMarchingCubes");
-        var program = ctx.createProgram(kernelSrc);
+    
         var device = ctx.getInfo(WebCL.CONTEXT_DEVICES)[0];
-
+        
+        
+        var programSrc = loadProgram("clMarchingCubes");
+        var program = ctx.createProgram(programSrc);
+    
         try {
           program.build ([device], "");
         } catch(e) {
@@ -755,7 +753,7 @@ function marchingCubesInit(mhdData, rawData){
         
         
         // locateMemory for dimensions
-        var buffer = new ArrayBuffer(dimensions.length * 4); //float has 4 bytes, it's a float buffer
+        /*var buffer = new ArrayBuffer(dimensions.length * 4); //float has 4 bytes, it's a float buffer
         
         var bufferView = new Float32Array(buffer);
         
@@ -765,13 +763,16 @@ function marchingCubesInit(mhdData, rawData){
             bufferView[i] = dimensions[i];
         
         // Write the buffer to OpenCL device memory
-        cmdQueue.enqueueWriteBuffer(memory, false, 0, dimensions.length * 4, bufferView);
+        cmdQueue.enqueueWriteBuffer(memory, false, 0, dimensions.length * 4, bufferView);*/
         
+        var dimensionsMemory = locateMemory(dimensions, webcl.MEM_READ_WRITE, cmdQueue, ctx);
         
         // locateMemory for Matrix
-        var memory1 = ctx.createBuffer(webcl.MEM_READ_WRITE, rawLenght);
-        cmdQueue.enqueueWriteBuffer(memory1, false, 0, rawLenght, matrix1DView);
+        var matrixMemory = ctx.createBuffer(webcl.MEM_READ_WRITE, rawLenght);
+        cmdQueue.enqueueWriteBuffer(matrixMemory, false, 0, rawLenght, matrix1DView);
         
+        
+        execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemory);
         alert("jaj");
         
         webcl.releaseAll();
@@ -782,8 +783,8 @@ function marchingCubesInit(mhdData, rawData){
     
 }
 
-// returns the kernel source code
-function loadKernel(id){
+// returns the program source code
+function loadProgram(id){
   var kernelElement = document.getElementById(id);
   var kernelSource = kernelElement.text;
   if (kernelElement.src != "") {
@@ -794,4 +795,101 @@ function loadKernel(id){
   } 
   return kernelSource;
 }
+
+// locates memory (saves value to buffer) 
+// data = typed array
+function locateMemory(data, flags, queue, ctx){
+        var buffer = new ArrayBuffer(data.length * 4); //float has 4 bytes, it's a float buffer
+        
+        var bufferView = new Float32Array(buffer);
+        
+        var functionBuffer = ctx.createBuffer(flags, data.length * 4);
+        
+        for(i = 0; i < data.length; i++)
+            bufferView[i] = data[i];
+        
+        // Write the buffer to OpenCL device memory
+        queue.enqueueWriteBuffer(functionBuffer, false, 0, data.length * 4, bufferView);
+        return functionBuffer;
+}
+
+
+function copyMemory(srcMem, queue, ctx){
+    
+        var memSize = srcMem.getInfo(webcl.MEM_SIZE);
+        var dstMem = ctx.createBuffer(webcl.MEM_READ_WRITE, memSize);
+        queue.enqueueCopyBuffer(srcMem, dstMem, 0, 0, memSize, null, null);
+		return dstMem;
+}
+
+//
+function execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemory) {
+        
+		if (sigma < 0.1)
+			return;
+    
+        // Init kernels
+        gaussXKernel = program.createKernel('gaussX');
+        gaussYKernel = program.createKernel('gaussY');
+        gaussZKernel = program.createKernel('gaussZ');
+    
+        var kernelMem = locateMemory(getGauss1DKernel(sigma), webcl.MEM_READ_WRITE, cmdQueue, ctx);
+        var tmpMemory = copyMemory(matrixMemory, cmdQueue, ctx);
+ 
+    
+        gaussXKernel.setArg(0, tmpMemory);
+        gaussXKernel.setArg(1, dimensionsMemory);
+        gaussXKernel.setArg(2, kernelMem);
+        gaussXKernel.setArg(3, matrixMemory);
+    
+        cmdQueue.enqueueTask(gaussXKernel);
+        /*
+		// MATRIX 
+		CLMem tmpMemory = CLUtils.copyMemory(staticMemory[MATRIX_DATA], queue, context);
+		Util.checkCLError(CL10.clFinish(queue));
+
+		// GAUSS 3D
+		gaussX.setArg(0, tmpMemory);
+		gaussX.setArg(1, staticMemory[DIMENSIONS_DATA]);
+		gaussX.setArg(2, kernel);
+		gaussX.setArg(3, staticMemory[MATRIX_DATA]);
+		CLUtils.enqueueKernel(gaussX, new int[] { MHDReader.Nx, MHDReader.Ny, MHDReader.Nz }, queue);
+		Util.checkCLError(CL10.clFinish(queue));
+		gaussY.setArg(0, staticMemory[MATRIX_DATA]);
+		gaussY.setArg(1, staticMemory[DIMENSIONS_DATA]);
+		gaussY.setArg(2, kernel);
+		gaussY.setArg(3, tmpMemory);
+		CLUtils.enqueueKernel(gaussY, new int[] { MHDReader.Nx, MHDReader.Ny, MHDReader.Nz }, queue);
+		Util.checkCLError(CL10.clFinish(queue));
+		gaussZ.setArg(0, tmpMemory);
+		gaussZ.setArg(1, staticMemory[DIMENSIONS_DATA]);
+		gaussZ.setArg(2, kernel);
+		gaussZ.setArg(3, staticMemory[MATRIX_DATA]);
+		CLUtils.enqueueKernel(gaussZ, new int[] { MHDReader.Nx, MHDReader.Ny, MHDReader.Nz }, queue);
+		Util.checkCLError(CL10.clFinish(queue));
+
+		CLUtils.cleanCLResources(new CLMem[] { tmpMemory, kernel }, new CLKernel[] { gaussX, gaussY, gaussZ }, null);
+		Util.checkCLError(CL10.clFinish(queue));*/
+	}
       
+function getGauss1DKernel(sigma) { //returns float array
+
+		var size = Math.floor(2 * Math.ceil(3 * sigma / mhdContent.dx) + 1); //int
+
+		var privKernel = new Array(size); //float array
+        var privKernelView = new Float32Array(privKernel);
+    
+		var sum = 0;
+		for (var i = 0; i < size; i++) {
+			var x = i - Math.floor(size / 2);
+			privKernelView[i] =  ((1 / (Math.sqrt(2 * Math.PI) * sigma)) * Math.exp(-(x * x) / (2 * sigma * sigma)));
+			sum += privKernelView[i];
+		}
+        
+        
+		for (var i = 0; i < size; i++) {
+			privKernelView[i] /= sum;
+		}
+
+		return privKernelView;
+}
