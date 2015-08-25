@@ -687,7 +687,7 @@ function marchingCubesInit(mhdData, rawData){
         console.log("started");
         
         // init basic stuff
-        var platforms = webcl.getPlatforms();
+        /*var platforms = webcl.getPlatforms();
         var devices = [];
         for (var i in platforms) {
             var plat = platforms[i];
@@ -695,17 +695,70 @@ function marchingCubesInit(mhdData, rawData){
         }
         
         var singleDevice = devices[0][0];
-        //alert(singleDevice.getInfo(WebCL.DEVICE_NAME));
+        alert(singleDevice.getInfo(WebCL.DEVICE_NAME));
+        //return false;
         
         var ctx = webcl.createContext ();
         var cmdQueue = ctx.createCommandQueue(singleDevice);
-    
-        var device = ctx.getInfo(WebCL.CONTEXT_DEVICES)[0];
         
+        var device = ctx.getInfo(WebCL.CONTEXT_DEVICES)[1];
+        //alert(device.getInfo(WebCL.DEVICE_NAME));*/
+        
+        /*var ctx = webcl.createContext(
+            webcl.DEVICE_TYPE_GPU
+        );
+
+        try{
+            devices = ctx.getInfo(webcl.CONTEXT_DEVICES);
+        }catch(ex){
+            throw "Error: Failed to retrieve compute devices for context!";
+        }
+        
+        var device = null, platform = null;
+        
+        for( var i = 0, il = devices.length; i < il; ++i){
+            device_type = devices[i].getInfo(webcl.DEVICE_TYPE);
+            if (device_type == webcl.DEVICE_TYPE_GPU) {
+                device = devices[i];
+            }
+        }
+        alert(device.getInfo(WebCL.DEVICE_NAME));*/
+        
+
+        
+        var platforms = webcl.getPlatforms();
+        var devices = [];
+        for (var i in platforms) {
+            var plat = platforms[i];
+            devices[i] = plat.getDevices();
+        }
+        //alert(devices[0].length);
+        //alert(devices[0][0].getInfo(WebCL.DEVICE_NAME));
+        
+        var device = null;
+        
+        for( var i = 0; i < devices.length; i++){
+            for( var j = 0; j < devices[i].length; j++){
+                device_type = devices[i][j].getInfo(webcl.DEVICE_TYPE);
+                if (device_type == webcl.DEVICE_TYPE_GPU) {
+                    device = devices[i][j];
+                    break;
+                    // what happens if nvidia before intel and what if after
+                }
+            }
+        }
+        var ctx = webcl.createContext(
+            device
+        );
+        var cmdQueue = ctx.createCommandQueue(device);
+        
+        //alert(device.getInfo(WebCL.DEVICE_NAME));
         
         var programSrc = loadProgram("clMarchingCubes");
         var program = ctx.createProgram(programSrc);
-    
+
+        //alert((ctx.getInfo(webcl.CONTEXT_DEVICES))[0].getInfo(WebCL.DEVICE_NAME));
+
         try {
           program.build ([device], "");
         } catch(e) {
@@ -720,13 +773,13 @@ function marchingCubesInit(mhdData, rawData){
         
         
         //var matrix1D = new Array(rawData.length/2),
-        var matrix1D = new ArrayBuffer(rawData.length),
+        var matrix1D = new ArrayBuffer(rawData.length*2),
             buffer1,
             buffer2,
             i = 0,
             j = 0;
         
-        var matrix1DView = new Int16Array(matrix1D);
+        var matrix1DView = new Float32Array(matrix1D);
         
         console.log("calculatig ...");
         console.log(matrix1D.byteLength );
@@ -772,8 +825,13 @@ function marchingCubesInit(mhdData, rawData){
         cmdQueue.enqueueWriteBuffer(matrixMemory, false, 0, rawLenght, matrix1DView);
         
         
-        execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemory);
-        alert("jaj");
+        console.log("length: " + matrixMemory.getInfo(WebCL.MEM_SIZE));
+        
+        console.log("execGauss3D");
+        execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemory, mhdContent);
+        
+        
+        console.log("Cleaning up");
         
         webcl.releaseAll();
         
@@ -823,7 +881,7 @@ function copyMemory(srcMem, queue, ctx){
 }
 
 //
-function execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemory) {
+function execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemory, mhdContent) {
         
 		if (sigma < 0.1)
 			return;
@@ -836,25 +894,18 @@ function execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemo
         var kernelMem = locateMemory(getGauss1DKernel(sigma), webcl.MEM_READ_WRITE, cmdQueue, ctx);
         var tmpMemory = copyMemory(matrixMemory, cmdQueue, ctx);
  
-    
         gaussXKernel.setArg(0, tmpMemory);
         gaussXKernel.setArg(1, dimensionsMemory);
         gaussXKernel.setArg(2, kernelMem);
         gaussXKernel.setArg(3, matrixMemory);
-    
-        cmdQueue.enqueueTask(gaussXKernel);
+        //return false;
+        try{
+            enqueueKernel(gaussXKernel, new Array(mhdContent.Nx, mhdContent.Ny, mhdContent.Nz), cmdQueue);
+        }catch(e){
+            alert(e);
+        }
+        
         /*
-		// MATRIX 
-		CLMem tmpMemory = CLUtils.copyMemory(staticMemory[MATRIX_DATA], queue, context);
-		Util.checkCLError(CL10.clFinish(queue));
-
-		// GAUSS 3D
-		gaussX.setArg(0, tmpMemory);
-		gaussX.setArg(1, staticMemory[DIMENSIONS_DATA]);
-		gaussX.setArg(2, kernel);
-		gaussX.setArg(3, staticMemory[MATRIX_DATA]);
-		CLUtils.enqueueKernel(gaussX, new int[] { MHDReader.Nx, MHDReader.Ny, MHDReader.Nz }, queue);
-		Util.checkCLError(CL10.clFinish(queue));
 		gaussY.setArg(0, staticMemory[MATRIX_DATA]);
 		gaussY.setArg(1, staticMemory[DIMENSIONS_DATA]);
 		gaussY.setArg(2, kernel);
@@ -871,6 +922,21 @@ function execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemo
 		CLUtils.cleanCLResources(new CLMem[] { tmpMemory, kernel }, new CLKernel[] { gaussX, gaussY, gaussZ }, null);
 		Util.checkCLError(CL10.clFinish(queue));*/
 	}
+
+function enqueueKernel(kernel, dimensions, cmdQueue){
+    var dim = dimensions.length;
+    var globalWorkSize = new Array(dim);
+    for (var i = 0; i < dim; i++) {
+        globalWorkSize[i] = dimensions[i];
+    }   
+
+    try {
+        cmdQueue.enqueueNDRangeKernel(kernel,dim, null, globalWorkSize);
+        //cmdQueue.enqueueNDRangeKernel(kernel, dim, globalWorkSize, null, null, null, null);
+    } catch(ex) {
+        throw "Couldn't enqueue the kernel. " + ex;
+    }
+}
       
 function getGauss1DKernel(sigma) { //returns float array
 

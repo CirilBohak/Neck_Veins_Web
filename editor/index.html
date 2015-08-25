@@ -613,7 +613,11 @@
                         continue;
                     value += matrix[xVar + y * Nx + z * Nx * Ny] * gaussKernel[size - i - 1];
                 }
+                
+                //result[572] = value;
                 result[x + y * Nx + z * Nx * Ny] = value;
+                
+
 
             }
 
@@ -660,6 +664,8 @@
                 result[x + y * Nx + z * Nx * Ny] = value;
                 
             }
+            
+
         </script>
         <div id="container">
             <div id="help"></div>
