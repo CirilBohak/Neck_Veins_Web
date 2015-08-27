@@ -686,46 +686,6 @@ function marchingCubesInit(mhdData, rawData){
         
         console.log("started");
         
-        // init basic stuff
-        /*var platforms = webcl.getPlatforms();
-        var devices = [];
-        for (var i in platforms) {
-            var plat = platforms[i];
-            devices[i] = plat.getDevices();
-        }
-        
-        var singleDevice = devices[0][0];
-        alert(singleDevice.getInfo(WebCL.DEVICE_NAME));
-        //return false;
-        
-        var ctx = webcl.createContext ();
-        var cmdQueue = ctx.createCommandQueue(singleDevice);
-        
-        var device = ctx.getInfo(WebCL.CONTEXT_DEVICES)[1];
-        //alert(device.getInfo(WebCL.DEVICE_NAME));*/
-        
-        /*var ctx = webcl.createContext(
-            webcl.DEVICE_TYPE_GPU
-        );
-
-        try{
-            devices = ctx.getInfo(webcl.CONTEXT_DEVICES);
-        }catch(ex){
-            throw "Error: Failed to retrieve compute devices for context!";
-        }
-        
-        var device = null, platform = null;
-        
-        for( var i = 0, il = devices.length; i < il; ++i){
-            device_type = devices[i].getInfo(webcl.DEVICE_TYPE);
-            if (device_type == webcl.DEVICE_TYPE_GPU) {
-                device = devices[i];
-            }
-        }
-        alert(device.getInfo(WebCL.DEVICE_NAME));*/
-        
-
-        
         var platforms = webcl.getPlatforms();
         var devices = [];
         for (var i in platforms) {
@@ -747,6 +707,9 @@ function marchingCubesInit(mhdData, rawData){
                 }
             }
         }
+        device = devices[0][0]; // delete if you want nvidia
+        console.log("device: " + device.getInfo(WebCL.DEVICE_NAME));
+        
         var ctx = webcl.createContext(
             device
         );
@@ -818,7 +781,7 @@ function marchingCubesInit(mhdData, rawData){
         // Write the buffer to OpenCL device memory
         cmdQueue.enqueueWriteBuffer(memory, false, 0, dimensions.length * 4, bufferView);*/
         
-        var dimensionsMemory = locateMemory(dimensions, webcl.MEM_READ_WRITE, cmdQueue, ctx);
+        var dimensionsMemory = locateMemoryInt(dimensions, webcl.MEM_READ_WRITE, cmdQueue, ctx);
         
         // locateMemory for Matrix
         var matrixMemory = ctx.createBuffer(webcl.MEM_READ_WRITE, rawLenght);
@@ -829,6 +792,11 @@ function marchingCubesInit(mhdData, rawData){
         
         console.log("execGauss3D");
         execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemory, mhdContent);
+        
+        console.log("finding max");
+        
+        max = execFindMax(device, program, ctx, cmdQueue, dimensionsMemory, matrixMemory);
+        console.log("max is: " + max);
         
         
         console.log("Cleaning up");
@@ -859,7 +827,22 @@ function loadProgram(id){
 function locateMemory(data, flags, queue, ctx){
         var buffer = new ArrayBuffer(data.length * 4); //float has 4 bytes, it's a float buffer
         
-        var bufferView = new Float32Array(buffer);
+        var bufferView = new Float32Array(buffer);//float
+        
+        var functionBuffer = ctx.createBuffer(flags, data.length * 4);
+        
+        for(i = 0; i < data.length; i++)
+            bufferView[i] = data[i];
+        
+        // Write the buffer to OpenCL device memory
+        queue.enqueueWriteBuffer(functionBuffer, false, 0, data.length * 4, bufferView);
+        return functionBuffer;
+}
+
+function locateMemoryInt(data, flags, queue, ctx){
+        var buffer = new ArrayBuffer(data.length * 4); //float has 4 bytes, it's a float buffer
+        
+        var bufferView = new Int32Array(buffer);//int
         
         var functionBuffer = ctx.createBuffer(flags, data.length * 4);
         
@@ -887,9 +870,9 @@ function execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemo
 			return;
     
         // Init kernels
-        gaussXKernel = program.createKernel('gaussX');
-        gaussYKernel = program.createKernel('gaussY');
-        gaussZKernel = program.createKernel('gaussZ');
+        var gaussXKernel = program.createKernel('gaussX');
+        var gaussYKernel = program.createKernel('gaussY');
+        var gaussZKernel = program.createKernel('gaussZ');
     
         var kernelMem = locateMemory(getGauss1DKernel(sigma), webcl.MEM_READ_WRITE, cmdQueue, ctx);
         var tmpMemory = copyMemory(matrixMemory, cmdQueue, ctx);
@@ -905,23 +888,98 @@ function execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemo
             alert(e);
         }
         
-        /*
-		gaussY.setArg(0, staticMemory[MATRIX_DATA]);
-		gaussY.setArg(1, staticMemory[DIMENSIONS_DATA]);
-		gaussY.setArg(2, kernel);
-		gaussY.setArg(3, tmpMemory);
-		CLUtils.enqueueKernel(gaussY, new int[] { MHDReader.Nx, MHDReader.Ny, MHDReader.Nz }, queue);
-		Util.checkCLError(CL10.clFinish(queue));
-		gaussZ.setArg(0, tmpMemory);
-		gaussZ.setArg(1, staticMemory[DIMENSIONS_DATA]);
-		gaussZ.setArg(2, kernel);
-		gaussZ.setArg(3, staticMemory[MATRIX_DATA]);
-		CLUtils.enqueueKernel(gaussZ, new int[] { MHDReader.Nx, MHDReader.Ny, MHDReader.Nz }, queue);
-		Util.checkCLError(CL10.clFinish(queue));
-
-		CLUtils.cleanCLResources(new CLMem[] { tmpMemory, kernel }, new CLKernel[] { gaussX, gaussY, gaussZ }, null);
-		Util.checkCLError(CL10.clFinish(queue));*/
+    
+        gaussYKernel.setArg(0, matrixMemory);
+        gaussYKernel.setArg(1, dimensionsMemory);
+        gaussYKernel.setArg(2, kernelMem);
+        gaussYKernel.setArg(3, tmpMemory);
+    
+        try{
+            enqueueKernel(gaussYKernel, new Array(mhdContent.Nx, mhdContent.Ny, mhdContent.Nz), cmdQueue);
+        }catch(e){
+            alert(e);
+        }
+    
+        gaussZKernel.setArg(0, tmpMemory);
+        gaussZKernel.setArg(1, dimensionsMemory);
+        gaussZKernel.setArg(2, kernelMem);
+        gaussZKernel.setArg(3, matrixMemory);
+    
+        try{
+            enqueueKernel(gaussZKernel, new Array(mhdContent.Nx, mhdContent.Ny, mhdContent.Nz), cmdQueue);
+        }catch(e){
+            alert(e);
+        }
+    
+        tmpMemory.release();
+        kernelMem.release();
+        gaussXKernel.release();
+        gaussYKernel.release();
+        gaussZKernel.release();
+    
 	}
+
+function execFindMax(device, program, ctx, cmdQueue, dimensionsMemory, matrixMemory){
+    
+        // ali sploh uporabim ta buffer? 
+        var MAX_COMPUTE_UNITS = device.getInfo(webcl.DEVICE_MAX_COMPUTE_UNITS);
+        console.log("device max compute units: " + MAX_COMPUTE_UNITS);
+        var LOCAL_MEM_SIZE = device.getInfo(webcl.DEVICE_LOCAL_MEM_SIZE);
+        console.log("device max mem size: " + LOCAL_MEM_SIZE);
+        var MAX_WORK_GROUP_SIZE =  device.getInfo(webcl.DEVICE_MAX_WORK_GROUP_SIZE);
+        console.log("device max work group size: " + MAX_WORK_GROUP_SIZE);
+    
+        // these are all ints
+        var nLocalWorkItems = MAX_WORK_GROUP_SIZE;
+		var nWorkGroups = LOCAL_MEM_SIZE * (MAX_COMPUTE_UNITS + 2) / (nLocalWorkItems * 4);
+		var nGlobalWorkItems = nLocalWorkItems * nWorkGroups;
+    
+        var findMax = program.createKernel('findMax');
+    
+        var maxMemory = ctx.createBuffer(webcl.MEM_READ_WRITE, nWorkGroups * 4);
+        
+        
+        var nLocalWorkItemsBuffer = new ArrayBuffer(4); //float has 4 bytes, it's a float buffer
+        var nLocalWorkItemsBufferView = new Uint32Array(nLocalWorkItemsBuffer);//int
+        nLocalWorkItemsBufferView[0] = nLocalWorkItems;
+        //var nLocalWorkItemsBufferIn = ctx.createBuffer(webcl.MEM_READ_WRITE, 4);
+        //cmdQueue.enqueueWriteBuffer(nLocalWorkItemsBufferIn, false, 0, 4, nLocalWorkItemsBufferView);
+    
+        findMax.setArg(0, matrixMemory);
+        findMax.setArg(1, dimensionsMemory);
+        findMax.setArg(2, nLocalWorkItemsBufferView);
+        findMax.setArg(3, maxMemory);
+    
+        
+        var globalWorkItemsArray = new Array(1);
+        globalWorkItemsArray[0] = nGlobalWorkItems;
+    
+        var locallWorkItemsArray = new Array(1);
+        locallWorkItemsArray[0] = nLocalWorkItems;
+        try{
+            //enqueueKernel(findMax, new Array(nGlobalWorkItems), cmdQueue);
+            cmdQueue.enqueueNDRangeKernel(findMax,1, null, globalWorkItemsArray, locallWorkItemsArray);
+        }catch(e){
+            alert(e);
+        }
+    
+        var data = new Float32Array(nWorkGroups);
+        try {
+            cmdQueue.enqueueReadBuffer(maxMemory, true, 0, nWorkGroups*4, data);
+        } catch(ex) {
+            throw "Couldn't read the buffer. " + ex;
+        }
+        var max = 0;
+        
+        for(var i = 0; i < data.length; i++){
+            if(data[i] > max)
+                max = data[i];
+        }
+    
+        findMax.release();
+        maxMemory.release();
+        return max;
+}
 
 function enqueueKernel(kernel, dimensions, cmdQueue){
     var dim = dimensions.length;

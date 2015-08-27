@@ -614,8 +614,7 @@
                     value += matrix[xVar + y * Nx + z * Nx * Ny] * gaussKernel[size - i - 1];
                 }
                 
-                //result[572] = value;
-                result[x + y * Nx + z * Nx * Ny] = value;
+                result[x + y * Nx + z * Nx * Ny] =  value;
                 
 
 
@@ -663,6 +662,35 @@
                 }
                 result[x + y * Nx + z * Nx * Ny] = value;
                 
+            }
+            
+            kernel void findMax(global const float* matrix, global const int* dimensions, local float* scratch, global float* max) {
+                int globalIndex = get_global_id(0);
+                int length = dimensions[0] * dimensions[1] * dimensions[2];
+                float accumulator = 0;
+                float tmpValue = 0;
+                while(globalIndex < length) {
+                    tmpValue = matrix[globalIndex];
+                    if (tmpValue > accumulator)
+                        accumulator = tmpValue;
+                    globalIndex += get_global_size(0);
+                }
+
+                int localIndex = get_local_id(0);
+                scratch[localIndex] = accumulator;
+                barrier(CLK_LOCAL_MEM_FENCE);
+                for(int offset = get_local_size(0) / 2; offset > 0; offset = offset / 2) {
+                    if (localIndex < offset) {
+                        float other = scratch[localIndex + offset];
+                        float mine = scratch[localIndex];
+                        scratch[localIndex] = (mine > other) ? mine : other;
+                    }
+                    barrier(CLK_LOCAL_MEM_FENCE);
+                }
+
+                if (localIndex == 0) {
+                    max[get_group_id(0)] = scratch[0];
+                }
             }
             
 
