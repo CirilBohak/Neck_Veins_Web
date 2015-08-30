@@ -693,6 +693,38 @@
                 }
             }
             
+            kernel void otsuHistogram(global const float* matrix, global const int* dimensions,global const float* max, global int* otsuValues) {
+                local int otsuLocal[256];
+
+                const int length = dimensions[0] * dimensions[1] * dimensions[2];
+                int localBuffSize = 256; 
+                int globalIndex = get_global_id(0);
+                int localIndex = get_local_id(0);
+
+                while (localIndex < localBuffSize) {
+                    otsuLocal[localIndex] = 0;
+                    localIndex += get_local_size(0);
+                }
+                localIndex = get_local_id(0);
+
+
+                barrier(CLK_LOCAL_MEM_FENCE);
+
+                while(globalIndex < length/2) {
+             		int index = (int)round(matrix[globalIndex] / max[0] * 255);
+                    atom_inc(&otsuLocal[index]);
+                    globalIndex += get_global_size(0);
+                }
+
+                barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+
+                while (localIndex < localBuffSize) {
+                    atomic_add(&otsuValues[localIndex], otsuLocal[localIndex]);
+                    localIndex += get_local_size(0);
+                }
+
+            }
+            
 
         </script>
         <div id="container">
