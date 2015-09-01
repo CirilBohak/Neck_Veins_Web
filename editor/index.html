@@ -594,7 +594,162 @@
                             3, 2, 4, 1, 2, 1, 1, 0
                     };
                     
-                    
+            float4 linearInterpolate(float4 first, float4 second, float thresh) {
+                float4 newVertex;
+                if (fabs(thresh - first.w) <= 0.00001)
+                    newVertex = first;
+                else if (fabs(thresh - second.w) <= 0.00001)
+                    newVertex = second;
+                else if (fabs(first.w - second.w) <= 0.00001)
+                    newVertex = first;
+                else
+                    newVertex = first + (second - first) / (second.w - first.w) * (thresh - first.w);
+                return newVertex;
+            }
+
+            // reference http://paulbourke.net/geometry/polygonise/
+            __kernel void marchingCubes(global const float* matrix, 
+                                        global const int* dimensions, 
+                                        global const float* maxThresh,
+                                        global float* result, 
+                                        global float* normals,
+                                        global int* counter) {
+                const int x = get_global_id(0);
+                const int y = get_global_id(1);
+                const int z = get_global_id(2);
+
+                // dimensions
+                const int Nx = dimensions[0];
+                const int Ny = dimensions[1];
+                const int Nz = dimensions[2];
+                const float max = maxThresh[0];
+                const float thresh = maxThresh[1];
+                const float thresholdLevel = max * thresh;
+
+
+                // check if not on edge
+                bool isXInBounds = x < Nx;
+                bool isYInBounds = y < Ny;
+                bool isZInBounds = z < Nz;
+                int cubeIndex = 0;
+
+                if (isXInBounds && isYInBounds && isZInBounds && z < Nz - 2) {
+                    // coordinates
+                    const int left = x;
+                    const int bottom = y;
+                    const int back = z + 1;
+                    const int right = x + 1;
+                    const int top = y + 1;
+                    const int front = z;
+
+                    const int matrixLeft = left;
+                    const int matrixBottom = bottom * Nx;
+                    const int matrixBack = back * Nx * Nx;
+                    const int matrixRight = right;
+                    const int matrixTop = top * Nx;
+                    const int matrixFront = front * Nx * Ny;
+
+                    const int positions[8] = {matrixLeft + matrixBottom + matrixBack, 
+                                                matrixRight + matrixBottom + matrixBack, 
+                                                matrixRight + matrixBottom + matrixFront, 
+                                                matrixLeft + matrixBottom + matrixFront,
+                                                matrixLeft + matrixTop + matrixBack, 
+                                                matrixRight + matrixTop + matrixBack, 
+                                                matrixRight + matrixTop + matrixFront,
+                                                matrixLeft + matrixTop + matrixFront};
+
+                    // values
+                    const float leftBottomBack = matrix[positions[0]]; 
+                    const float rightBottomBack = matrix[positions[1]]; 
+                    const float rightBottomFront = matrix[positions[2]]; 
+                    const float leftBottomFront = matrix[positions[3]]; 
+                    const float leftTopBack = matrix[positions[4]]; 
+                    const float rightTopBack = matrix[positions[5]]; 
+                    const float rightTopFront = matrix[positions[6]]; 
+                    const float leftTopFront = matrix[positions[7]]; 
+
+                    float values[8] = { leftBottomBack, rightBottomBack, rightBottomFront,  leftBottomFront,
+                                        leftTopBack, rightTopBack, rightTopFront, leftTopFront };
+                    for (int i = 0; i < 8; i++) {
+                        if (values[i] >= thresholdLevel) {
+                            cubeIndex += 1 << i;
+                        }
+                        values[i] /= max;
+                    }
+
+                    if (nTriangles[cubeIndex] > 0) {
+                        // vertices
+                        float4 vLeftBottomBack = {left, bottom, back, values[0]};
+                        float4 vRightBottomBack = {right, bottom, back, values[1]};
+                        float4 vRightBottomFront = {right, bottom, front, values[2]};
+                        float4 vLeftBottomFront = {left, bottom, front, values[3]};
+                        float4 vLeftTopBack = {left, top, back, values[4]};
+                        float4 vRightTopBack = {right, top, back, values[5]};
+                        float4 vRightTopFront = {right, top, front, values[6]};
+                        float4 vLeftTopFront = {left, top, front, values[7]};
+
+                        float4 vertices[12];
+                        if ((edgeTable[cubeIndex] & 1) == 1) {
+                            vertices[0] = linearInterpolate(vLeftBottomBack, vRightBottomBack, thresh);
+                        }
+                        if ((edgeTable[cubeIndex] & 2) == 2){
+                            vertices[1] = linearInterpolate(vRightBottomBack, vRightBottomFront, thresh);
+                        }
+                        if ((edgeTable[cubeIndex] & 4) == 4) {
+                            vertices[2] = linearInterpolate(vRightBottomFront, vLeftBottomFront, thresh);
+                        }
+                        if ((edgeTable[cubeIndex] & 8) == 8) {
+                            vertices[3] = linearInterpolate(vLeftBottomFront, vLeftBottomBack, thresh);
+                        }
+                        if ((edgeTable[cubeIndex] & 16) == 16) {
+                            vertices[4] = linearInterpolate(vLeftTopBack, vRightTopBack, thresh);
+                        }
+                        if ((edgeTable[cubeIndex] & 32) == 32) {
+                            vertices[5] = linearInterpolate(vRightTopBack, vRightTopFront, thresh);
+                        }
+                        if ((edgeTable[cubeIndex] & 64) == 64) {
+                            vertices[6] = linearInterpolate(vRightTopFront, vLeftTopFront, thresh);
+                        }
+                        if ((edgeTable[cubeIndex] & 128) == 128) {
+                            vertices[7] = linearInterpolate(vLeftTopFront, vLeftTopBack, thresh);
+                        }
+                        if ((edgeTable[cubeIndex] & 256) == 256) {
+                            vertices[8] = linearInterpolate(vLeftBottomBack, vLeftTopBack, thresh);
+                        }
+                        if ((edgeTable[cubeIndex] & 512) == 512) {
+                            vertices[9] = linearInterpolate(vRightBottomBack, vRightTopBack, thresh);
+                        }
+                        if ((edgeTable[cubeIndex] & 1024) == 1024) {
+                            vertices[10] = linearInterpolate(vRightBottomFront, vRightTopFront, thresh);
+                        }
+                        if ((edgeTable[cubeIndex] & 2048) == 2048) {
+                            vertices[11] = linearInterpolate(vLeftBottomFront, vLeftTopFront, thresh);
+                        }
+
+                        float4 normal;
+                        int lastIndex = atomic_add(&counter[0], nTriangles[cubeIndex]) * 9;
+                        for (int i = 0; i < nTriangles[cubeIndex] * 3; i++) {
+                            if (i % 3 == 0) {
+                                float4 v1 = vertices[triTable[cubeIndex][i + 1]] - vertices[triTable[cubeIndex][i]];
+                                float4 v2 = vertices[triTable[cubeIndex][i + 2]] - vertices[triTable[cubeIndex][i]];
+                                normal = fast_normalize(cross(v1, v2));
+                            }
+
+                            result[lastIndex + (i * 3)] = vertices[triTable[cubeIndex][i]].x; 
+                            result[lastIndex + (i * 3) + 1] = vertices[triTable[cubeIndex][i]].y; 
+                            result[lastIndex + (i * 3) + 2] = vertices[triTable[cubeIndex][i]].z; 
+
+                            normals[lastIndex + (i * 3)] = normal.x;
+                            normals[lastIndex + (i * 3) + 1] = normal.y;
+                            normals[lastIndex + (i * 3) + 2] = normal.z;
+                        }
+
+                    }
+
+                }
+
+            }
+                  
             __kernel void gaussX(__global const float* matrix, __global const int* dimensions, __global const float* gaussKernel, __global float* result ) {
                 // dimensions
                 const int Nx = dimensions[0];
@@ -615,7 +770,7 @@
                 }
                 
                 result[x + y * Nx + z * Nx * Ny] =  value;
-                
+                //result[x + y * Nx + z * Nx * Ny] = matrix[x + y * Nx + z * Nx * Ny];
 
 
             }
@@ -696,7 +851,8 @@
             kernel void otsuHistogram(global const float* matrix, global const int* dimensions,global const float* max, global int* otsuValues) {
                 local int otsuLocal[256];
 
-                const int length = dimensions[0] * dimensions[1] * dimensions[2];
+                //const int length = dimensions[0] * dimensions[1] * dimensions[2];
+                const int length = dimensions[4];
                 int localBuffSize = 256; 
                 int globalIndex = get_global_id(0);
                 int localIndex = get_local_id(0);
@@ -710,8 +866,8 @@
 
                 barrier(CLK_LOCAL_MEM_FENCE);
 
-                while(globalIndex < length/2) {
-             		int index = (int)round(matrix[globalIndex] / max[0] * 255);
+                while(globalIndex < length) {
+                    int index = (int)round(matrix[globalIndex] / max[0] * 255);
                     atom_inc(&otsuLocal[index]);
                     globalIndex += get_global_size(0);
                 }

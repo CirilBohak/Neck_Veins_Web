@@ -408,7 +408,7 @@ var Loader = function ( editor ) {
                             end = file1.size; // this is a blob 
                             rawDataFromFile = "";
                             // start and end byte 
-                            console.log("going in");
+                            //console.log("going in");
                             rawReader.readAsBinaryString(file1);
                             
                         }
@@ -419,7 +419,7 @@ var Loader = function ( editor ) {
                     
                     rawReader.addEventListener( 'load', function (event) {
                         var rawData = event.target.result;
-                        console.log("going into init");
+                        //console.log("going into init");
                         marchingCubesInit(mhdContent, rawData);
                         
 
@@ -668,7 +668,7 @@ var Loader = function ( editor ) {
 }
 
 function marchingCubesInit(mhdData, rawData){
-    console.log("mhdData: " + mhdData.rawFile + " rawData " + rawData.length);
+    //console.log("mhdData: " + mhdData.rawFile + " rawData " + rawData.length);
     
         if(window.webcl == undefined) {
         alert("Unfortunately your system does not support WebCL. " +
@@ -737,95 +737,134 @@ function marchingCubesInit(mhdData, rawData){
 
         
         //var matrix1D = new Array(rawData.length/2),
-        var matrix1D = new ArrayBuffer(rawData.length*2),
-            buffer1,
-            buffer2,
-            i = 0,
-            j = 0;
+        var matrix1D = new ArrayBuffer(rawData.length*2);
         
         var matrix1DView = new Float32Array(matrix1D);
         
-        console.log("calculatig ...");
-        console.log(matrix1D.byteLength );
+        console.log("Transforming and doing initial calculations");
+        //console.log(matrix1D.byteLength);
+        
         var rawLenght = rawData.length;
-        while(i < rawLenght/2){
-            buffer1 = rawData[i].charCodeAt(0);
-            buffer2 = rawData[i+1].charCodeAt(0);
-            buffer2<<=8;
-            buffer2+=buffer1;
-            matrix1DView[j] = buffer2;
-            j = j + 1;
-            i = i + 2;
+        
+        /*-----------------------RAZDELI NA VEČ DELOV ---------------------------*/
+        /*RAW DATA = 200MB
+        /*matrix1DArray = 100M elements and 400MB
+        /*-----------------------------------------------------------------------*/
+        console.log("dimensions: " + mhdContent.Nx + " " + mhdContent.Ny + " " + mhdContent.Nz);
+        var sizeOfPart = 0, //number of elements
+            numberOfParts = 2,
+            dataArrayLength = matrix1DView.length, //number of elements
+            startOfPart = 0,
+            endOfPart = 0,
+            currPartSize = 0,
+            j = 0;
+        
+        
+        while(true){
+            if(((matrix1DView.length % numberOfParts) == 0) && ((matrix1DView.length / numberOfParts) <=  51118080))
+                break;
+            numberOfParts = numberOfParts + 1;
         }
-        delete rawData;
-        for(var i = 102236160/2+50000; i < 102236160/2 + 50100; i++)
-            console.log("matrix1: " + matrix1DView[i].toString(2));
-        //console.log(matrix1DView.byteLength );
         
-        var sigma = 50/100;
-        var threshold = 50/100;
-        
-        var gaussSize = Math.floor(2 * Math.ceil(3 * sigma / mhdContent.dx) + 1);
-        var dimensions = new Array( mhdContent.Nx , mhdContent.Ny , mhdContent.Nz, gaussSize );
+        var sizeOfPart = matrix1DView.length/numberOfParts,
+            slicesArray = new Array(numberOfParts),
+            limitForLastElement = sizeOfPart * (numberOfParts - 1);
 
-        var sestevek = dimensions[0]*dimensions[1]*dimensions[2];
-        var dolzina = matrix1DView.length;
-        console.log("size of array : " + sestevek + " length of matrix: " + dolzina);
-        
-        var dimensionsMemory = locateMemoryInt(dimensions, webcl.MEM_READ_WRITE, cmdQueue, ctx);
-        
-        // locateMemory for Matrix
-        var matrixMemory = ctx.createBuffer(webcl.MEM_READ_WRITE, rawLenght);
-        cmdQueue.enqueueWriteBuffer(matrixMemory, true, 0, rawLenght, matrix1DView);
-        
-        
-        console.log("length: " + matrixMemory.getInfo(WebCL.MEM_SIZE));
-        
-        console.log("execGauss3D");
-        
-        var arraySize1 = rawLenght/4; 
-        var histogramGauss1 = new Float32Array(arraySize1);
-        
-        try {
-            cmdQueue.enqueueReadBuffer(matrixMemory, true, 0, rawLenght, histogramGauss1); //in bits
-        } catch(ex) {
-            throw "Couldn't read the buffer. " + ex;
+        for(var i = 0; i < dataArrayLength; i+=sizeOfPart){
+            
+            startOfPart = i;
+            
+            if(i < limitForLastElement){
+                endOfPart = i+sizeOfPart-1;
+            }else{
+                endOfPart = dataArrayLength-1;
+            }
+            
+            currPartSize = endOfPart - startOfPart + 1;
+
+            slicesArray[j] = new Array(startOfPart, endOfPart, currPartSize);
+            console.log(slicesArray[j][0] + " " + slicesArray[j][1] + " " + slicesArray[j][2]);
+            j = j + 1;
         }
         
-        for(var i = 54881318/2; i < 54881330/2; i++)
-            console.log(histogramGauss1[i]);
+        /*-------------------------------------------------------------*/
+        /*----------------------- MAIN LOOP ---------------------------*/
+        /*-------------------------------------------------------------*/
         
+        var globalMemoryArray = new Array(numberOfParts),
+            histogramArray = new Array(numberOfParts),
+            histogramSum = new Array(256),
+            sigma = 50/100,
+            threshold = 50/100;
         
-        execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemory, mhdContent);
+        for(var i = 0; i < 256; i++)
+            histogramSum[i] = 0;
         
-        console.log("finished gauss");
+        threshold = 0.01;
         
-        
-        console.log(rawLenght);
-        var arraySize = rawLenght/4; 
-        var histogramGauss = new Float32Array(arraySize);
-        
-        try {
-            cmdQueue.enqueueReadBuffer(matrixMemory, true, 0, rawLenght, histogramGauss); //in bits
-        } catch(ex) {
-            throw "Couldn't read the buffer. " + ex;
+        for(k = 0; k < slicesArray.length; k++){
+            
+            var buffer1,
+                buffer2,
+                i = slicesArray[k][0]*2,
+                j = 0;
+            while(i < (slicesArray[k][1]+1)*2){
+                buffer1 = rawData[i].charCodeAt(0);
+                buffer2 = rawData[i+1].charCodeAt(0);
+                buffer2<<=8;
+                buffer2+=buffer1;
+                matrix1DView[j] = buffer2;
+                j = j + 1;
+                i = i + 2;
+            }
+
+            var gaussSize = Math.floor(2 * Math.ceil(3 * sigma / mhdContent.dx) + 1);
+            var dimensions = new Array( mhdContent.Nx , mhdContent.Ny , mhdContent.Nz, gaussSize, (slicesArray[k][2]));        
+            var dimensionsMemory = locateMemoryInt(dimensions, webcl.MEM_READ_WRITE, cmdQueue, ctx);
+
+
+            // locateMemory for Matrix
+            var matrixMemory = ctx.createBuffer(webcl.MEM_READ_WRITE, rawLenght);
+            cmdQueue.enqueueWriteBuffer(matrixMemory, true, 0, rawLenght, matrix1DView);
+
+            console.log("execGauss3D");
+            execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemory, mhdContent);
+
+            console.log("finished gauss");
+
+            console.log("finding max");
+            var max = execFindMax(device, program, ctx, cmdQueue, dimensionsMemory, matrixMemory);
+            console.log("max is: " + max);
+
+            console.log("otsuTreshold");
+            if (threshold <= 0.1)
+                histogramArray[k] = execOtsuHistogram(device, program, max, ctx, cmdQueue, dimensionsMemory, matrixMemory); //int buffer
+            console.log("finished otsu");
+
+            console.log("Cleaning up");
         }
         
-        for(var i = 54881318/2; i < 54881330/2; i++)
-            console.log(histogramGauss[i]);
+        if(threshold <= 0.1){
+            for(var i = 0; i < numberOfParts; i++){
+                for(j = 0; j < 256; j++){
+                    histogramSum[j] = histogramSum[j] + histogramArray[i][j];
+                }
+            }
+            
+            threshold = thresholdFromHistogram(histogramSum, mhdContent.Nx * mhdContent.Ny * mhdContent.Nz);
+        }
         
+        console.log(threshold);
+        //webcl.releaseAll();
         
-        
-        console.log("finding max");
-        
-        var max = execFindMax(device, program, ctx, cmdQueue, dimensionsMemory, matrixMemory);
-        console.log("max is: " + max);
-        
-        console.log("otsuTreshold");
-        
-        
-        
-        var arraySize2 = rawLenght/4; 
+    } catch (e) {
+        alert(e.message);
+    }
+    
+}
+
+
+        /*var arraySize2 = rawLenght/4; 
         var histogramGauss2 = new Float32Array(arraySize2);
         
         try {
@@ -835,18 +874,8 @@ function marchingCubesInit(mhdData, rawData){
         }
         
         for(var i = 54881318/2; i < 54881330/2; i++)
-            console.log(histogramGauss2[i]);
-        var threshold = execOtsuThreshold(0.01, device, program, max, ctx, cmdQueue, dimensionsMemory, matrixMemory); // treshold is float
-        console.log("finished otsu");
-        console.log("Cleaning up");
-        
-        webcl.releaseAll();
-        
-    } catch (e) {
-        alert(e.message);
-    }
-    
-}
+            console.log(histogramGauss2[i]);*/
+
 
 // returns the program source code
 function loadProgram(id){
@@ -903,7 +932,7 @@ function copyMemory(srcMem, queue, ctx){
 }
 
 //
-function execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemory, mhdContent) {
+function execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemory, mhdContent, start, end) {
         
 		if (sigma < 0.1)
 			return;
@@ -912,21 +941,24 @@ function execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemo
         var gaussXKernel = program.createKernel('gaussX');
         var gaussYKernel = program.createKernel('gaussY');
         var gaussZKernel = program.createKernel('gaussZ');
+ 
+    
     
         var kernelMem = locateMemory(getGauss1DKernel(sigma), webcl.MEM_READ_WRITE, cmdQueue, ctx);
         var tmpMemory = copyMemory(matrixMemory, cmdQueue, ctx);
- 
+    
         gaussXKernel.setArg(0, tmpMemory);
         gaussXKernel.setArg(1, dimensionsMemory);
         gaussXKernel.setArg(2, kernelMem);
         gaussXKernel.setArg(3, matrixMemory);
         //return false;
+    
         try{
             enqueueKernel(gaussXKernel, new Array(mhdContent.Nx, mhdContent.Ny, mhdContent.Nz), cmdQueue);
         }catch(e){
             alert(e);
         }
-    
+        
     
         gaussYKernel.setArg(0, matrixMemory);
         gaussYKernel.setArg(1, dimensionsMemory);
@@ -1021,14 +1053,6 @@ function execFindMax(device, program, ctx, cmdQueue, dimensionsMemory, matrixMem
         return max;
 }
 
-//returns double
-function execOtsuThreshold(threshold, device, program, max, ctx, cmdQueue, dimensionsMemory, matrixMemory) {
-    if (threshold > 0.1)
-        return threshold;
-    var histogram = execOtsuHistogram(device, program, max, ctx, cmdQueue, dimensionsMemory, matrixMemory); //int buffer
-        //return thresholdFromHistogram(histogram, mhdContent.Nx * mhdContent.Ny * mhdContent.Nz);
-}
-
 //returns int buffer
 function execOtsuHistogram(device, program, max, ctx, cmdQueue, dimensionsMemory, matrixMemory) { 
     
@@ -1050,7 +1074,6 @@ function execOtsuHistogram(device, program, max, ctx, cmdQueue, dimensionsMemory
         otsuHistogramMemoryArrayBufferView[i] = 0;
     var otsuHistogramMemory = ctx.createBuffer(webcl.MEM_READ_WRITE, otsuBuffSize);
     cmdQueue.enqueueWriteBuffer(otsuHistogramMemory, true, 0, otsuBuffSize, otsuHistogramMemoryArrayBufferView);
-    
     
     
     otsuHistogram.setArg(0, matrixMemory);
@@ -1084,20 +1107,60 @@ function execOtsuHistogram(device, program, max, ctx, cmdQueue, dimensionsMemory
     } catch(ex) {
         throw "Couldn't read the buffer. " + ex;
     }
-    var histvalues= " ";
-    for(var i = 0; i < histogram.length; i++)
-        histvalues = histvalues + histogram[i] + " " ;
-    console.log(histvalues);
     
-    /*
-    IntBuffer histogram = BufferUtils.createIntBuffer(256);
-    CL10.clEnqueueReadBuffer(queue, otsuHistogramMemory, CL10.CL_TRUE, 0, histogram, null, null);
-    Util.checkCLError(CL10.clReleaseKernel(otsuHistogram));
-    Util.checkCLError(CL10.clReleaseMemObject(maxValueMemory));
-    Util.checkCLError(CL10.clReleaseMemObject(otsuHistogramMemory));
-    Util.checkCLError(CL10.clFinish(queue));
+    /*var histVal = " ";
+    for(var i = 0; i < histogram.length; i++)
+        histVal = histVal + histogram[i] + " ";
+    console.log(histVal);*/
+    
+    otsuHistogram.release();
+    maxValueMemory.release();
+    otsuHistogramMemory.release();
+    cmdQueue.flush();
+    return histogram;
+}
 
-    return histogram;*/
+function thresholdFromHistogram(buffer, nValues){ //Int32Array and int
+    
+    var frequences = new Array(256),
+        w = new Array(256),
+        m = new Array(256);
+    
+    
+    for(var i = 0; i < frequences.length; i++){
+        frequences[i] = buffer[i] / nValues;
+        w[i] = 0;
+        m[i] = 0;
+    }
+    
+    w[0] = frequences[0];
+    for(var i = 1; i < m.length; i++){
+        w[i] = w[i - 1] + frequences[i];
+        m[i] = m[i - 1] + i * frequences[i];   
+        //console.log("w[i] : " + w[i] + " m[i] : " + m[i] + " frequences[i] : " + frequences[i]);
+    }
+    
+    var mean = m[255],
+        tmpMax = 0,
+        tmpMax2 = 0,
+        threshold = 0,
+        threshold2 = 0;
+    
+    for(var i = 0; i < 256; i++){
+        bcv = mean * w[i] - m[i];
+        bcv *= bcv / (w[i] * (1 - w[i]));
+        if (tmpMax < bcv) {
+            tmpMax = bcv;
+            threshold = i;
+        }
+        if (tmpMax > bcv && tmpMax2 < bcv) {
+            threshold2 = i;
+        }
+    }
+    
+    
+    threshold = (threshold + threshold2) / 2;
+    return threshold / 256.0;
 }
 
 function enqueueKernel(kernel, dimensions, cmdQueue){
