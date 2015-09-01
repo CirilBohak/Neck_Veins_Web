@@ -854,7 +854,7 @@ function marchingCubesInit(mhdData, rawData){
             threshold = thresholdFromHistogram(histogramSum, mhdContent.Nx * mhdContent.Ny * mhdContent.Nz);
         }
         
-        console.log(threshold);
+        execMarchingCubes(threshold, program, max, cmdQueue, ctx);
         //webcl.releaseAll();
         
     } catch (e) {
@@ -1161,6 +1161,44 @@ function thresholdFromHistogram(buffer, nValues){ //Int32Array and int
     
     threshold = (threshold + threshold2) / 2;
     return threshold / 256.0;
+}
+
+// returns object array
+function execMarchingCubes(threshold, program, max, cmdQueue, ctx) {
+    console.log(threshold);
+    
+    var marchingKernel = program.createKernel('marchingCubes');
+    var maxThreshArray = new Array(max, threshold);
+    var maxThreshMemory = locateMemory(maxThreshArray, webcl.MEM_READ_WRITE, cmdQueue, ctx);
+    
+    /*
+    CLMem trianglesMemory = CLUtils.locateMemory((int) (matrixSize / 1.25f), CL10.CL_MEM_WRITE_ONLY, context);
+    CLMem normalsMemory = CLUtils.locateMemory((int) (matrixSize / 1.25f), CL10.CL_MEM_WRITE_ONLY, context);
+    CLMem nTrianglesMemory = CLUtils.locateMemory(new int[1], CL10.CL_MEM_READ_WRITE, queue, context);
+    Util.checkCLError(CL10.clFinish(queue));
+
+    // Set the kernel parameters
+    marchingKernel.setArg(0, staticMemory[MATRIX_DATA]);
+    marchingKernel.setArg(1, staticMemory[DIMENSIONS_DATA]);
+    marchingKernel.setArg(2, maxThreshMemory);
+    marchingKernel.setArg(3, trianglesMemory);
+    marchingKernel.setArg(4, normalsMemory);
+    marchingKernel.setArg(5, nTrianglesMemory);
+    CLUtils.enqueueKernel(marchingKernel, new int[] { MHDReader.Nx, MHDReader.Ny, MHDReader.Nz }, queue);
+    Util.checkCLError(CL10.clFinish(queue));
+
+    IntBuffer nTrianglesBuff = BufferUtils.createIntBuffer(1);
+    CL10.clEnqueueReadBuffer(queue, nTrianglesMemory, CL10.CL_TRUE, 0, nTrianglesBuff, null, null);
+    FloatBuffer trianglesBuff = BufferUtils.createFloatBuffer(nTrianglesBuff.get(0) * 9);
+    FloatBuffer normalsBuff = BufferUtils.createFloatBuffer(nTrianglesBuff.get(0) * 9);
+    CL10.clEnqueueReadBuffer(queue, trianglesMemory, CL10.CL_TRUE, 0, trianglesBuff, null, null);
+    CL10.clEnqueueReadBuffer(queue, normalsMemory, CL10.CL_TRUE, 0, normalsBuff, null, null);
+
+    CLMem[] memObj = { maxThreshMemory, trianglesMemory, normalsMemory, nTrianglesMemory };
+    CLKernel[] kernelObj = { marchingKernel };
+    CLUtils.cleanCLResources(memObj, kernelObj, null);
+
+    return new Object[] { nTrianglesBuff, trianglesBuff, normalsBuff, threshold };*/
 }
 
 function enqueueKernel(kernel, dimensions, cmdQueue){
