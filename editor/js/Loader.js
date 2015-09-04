@@ -1,10 +1,7 @@
 /**
  * @author mrdoob / http://mrdoob.com/
  */
-
-var Loader = function ( editor ) {
-    
-    var rotWorldMatrix;      
+    var rotWorldMatrix; 
     function rotateAroundWorldAxis( object, axis, radians ) {
         rotWorldMatrix = new THREE.Matrix4();
         rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
@@ -12,6 +9,10 @@ var Loader = function ( editor ) {
         object.matrix = rotWorldMatrix;
         object.rotation.setFromRotationMatrix(object.matrix, object.order);
     } 
+
+var Loader = function ( editor ) {
+    
+         
     
 	var scope = this;
 	var signals = editor.signals;
@@ -236,10 +237,7 @@ var Loader = function ( editor ) {
                             }
                             
                             
-                            
-                            //console.log(normals);
                             for(var i = 0; i < vertices.length; i = i + 3){
-                                //console.log(vertices[i] + " " + vertices[i+1] + " " + vertices[i+2]);
                                 vertexAvgX = vertexAvgX + vertices[i];
                                 vertexAvgY = vertexAvgY + vertices[i+1];
                                 vertexAvgZ = vertexAvgZ + vertices[i+2];
@@ -248,7 +246,6 @@ var Loader = function ( editor ) {
                             vertexAvgX = Math.round(vertexAvgX / (vertices.length / 3) * 10) / 10;
                             vertexAvgY = Math.round(vertexAvgY / (vertices.length / 3) * 10) / 10;
                             vertexAvgZ = Math.round(vertexAvgZ / (vertices.length / 3) * 10) / 10;
-                            //console.log(vertexAvgX + " " + vertexAvgY + " " + vertexAvgZ);
                             
                             
                             
@@ -800,7 +797,8 @@ function marchingCubesInit(mhdData, rawData){
         for(var i = 0; i < 256; i++)
             histogramSum[i] = 0;
         
-        threshold = 0.01;
+        //threshold = 0.01;
+        
         
         for(k = 0; k < slicesArray.length; k++){
             
@@ -824,21 +822,21 @@ function marchingCubesInit(mhdData, rawData){
 
 
             // locateMemory for Matrix
-            var matrixMemory = ctx.createBuffer(webcl.MEM_READ_WRITE, rawLenght);
-            cmdQueue.enqueueWriteBuffer(matrixMemory, true, 0, rawLenght, matrix1DView);
+            globalMemoryArray[k] = ctx.createBuffer(webcl.MEM_READ_WRITE, (slicesArray[k][2])*4);
+            cmdQueue.enqueueWriteBuffer(globalMemoryArray[k], true, 0, (slicesArray[k][2])*4, matrix1DView);
 
             console.log("execGauss3D");
-            execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, matrixMemory, mhdContent);
+            execGauss3D(sigma, program, ctx, cmdQueue, dimensionsMemory, globalMemoryArray[k], mhdContent);
 
             console.log("finished gauss");
 
             console.log("finding max");
-            var max = execFindMax(device, program, ctx, cmdQueue, dimensionsMemory, matrixMemory);
+            var max = execFindMax(device, program, ctx, cmdQueue, dimensionsMemory, globalMemoryArray[k]);
             console.log("max is: " + max);
 
             console.log("otsuTreshold");
             if (threshold <= 0.1)
-                histogramArray[k] = execOtsuHistogram(device, program, max, ctx, cmdQueue, dimensionsMemory, matrixMemory); //int buffer
+                histogramArray[k] = execOtsuHistogram(device, program, max, ctx, cmdQueue, dimensionsMemory, globalMemoryArray[k]); //int buffer
             console.log("finished otsu");
 
             console.log("Cleaning up");
@@ -854,7 +852,64 @@ function marchingCubesInit(mhdData, rawData){
             threshold = thresholdFromHistogram(histogramSum, mhdContent.Nx * mhdContent.Ny * mhdContent.Nz);
         }
         
-        execMarchingCubes(threshold, program, max, cmdQueue, ctx);
+        
+        
+       /* var histogramGauss2 = new Float32Array((slicesArray[1][2]));
+        try {
+            cmdQueue.enqueueReadBuffer(globalMemoryArray[1], true, 0, slicesArray[1][2]*4, histogramGauss2); //in bits
+        } catch(ex) {
+            throw "Couldn't read the buffer. " + ex;
+        }
+        
+        histTemp = " ";
+        for(var i = 0; i < histogramGauss2.length; i+=1000000)
+            histTemp = histTemp + histogramGauss2[i] + " ";
+
+        console.log(histTemp);*/
+
+        /*-------------------------------------------------------------*/
+        /*-------- MARCHING CUBES AND MODEL CONSTRUCTION --------------*/
+        /*-------------------------------------------------------------*/
+        var triangleArray = new Array(numberOfParts),
+            normalArray = new Array(numberOfParts),
+            numOfTriangles = 0,
+            results;
+        
+        var temp = " " ;
+        for(var i = 0; i < numberOfParts; i++){
+
+            console.log("slice size: " + slicesArray[i][2]);
+            console.log(i);
+            results = null;
+            results = execMarchingCubes(threshold, program, max, cmdQueue, ctx, (slicesArray[i][2]), dimensionsMemory, globalMemoryArray[i]);
+        
+            numOfTriangles += results[0][0];
+            triangleArray[i] = results[1];
+            normalArray[i] = results[2];
+        }
+        
+        temp = " ";
+
+        //console.log("st trikotnikov: " + numOfTriangles + " dolzina prvega dela: " + triangleArray[0].length + " dolzina drugega dela: " + triangleArray[1].length + " " + normalArray[0].length + " " + normalArray[1].length);
+
+        
+        var allTriangleArray = new Array(),
+            allNormalArray = new Array(),
+            tmp;
+        
+        for(var i = 0; i < numberOfParts; i++){
+            tmp = Array.from(triangleArray[i]);
+            allTriangleArray = allTriangleArray.concat(tmp);
+            tmp = Array.from(normalArray[i]);
+            allNormalArray = allNormalArray.concat(tmp);
+        }
+        
+        /*var tmpString = " " ;
+        for(var i = 0; i < allTriangleArray.length; i+=100000)
+            tmpString = tmpString + allTriangleArray[i] + " ";
+        console.log(tmpString);*/
+        
+        constructVBO(numOfTriangles, allTriangleArray, allNormalArray, threshold);
         //webcl.releaseAll();
         
     } catch (e) {
@@ -1164,46 +1219,184 @@ function thresholdFromHistogram(buffer, nValues){ //Int32Array and int
 }
 
 // returns object array
-function execMarchingCubes(threshold, program, max, cmdQueue, ctx) {
-    console.log(threshold);
-    
+function execMarchingCubes(threshold, program, max, cmdQueue, ctx, lengthOfData, dimensionsMemory, matrixMemory) {
     var marchingKernel = program.createKernel('marchingCubes');
     var maxThreshArray = new Array(max, threshold);
     var maxThreshMemory = locateMemory(maxThreshArray, webcl.MEM_READ_WRITE, cmdQueue, ctx);
     
-    /*
-    CLMem trianglesMemory = CLUtils.locateMemory((int) (matrixSize / 1.25f), CL10.CL_MEM_WRITE_ONLY, context);
-    CLMem normalsMemory = CLUtils.locateMemory((int) (matrixSize / 1.25f), CL10.CL_MEM_WRITE_ONLY, context);
-    CLMem nTrianglesMemory = CLUtils.locateMemory(new int[1], CL10.CL_MEM_READ_WRITE, queue, context);
-    Util.checkCLError(CL10.clFinish(queue));
-
-    // Set the kernel parameters
-    marchingKernel.setArg(0, staticMemory[MATRIX_DATA]);
-    marchingKernel.setArg(1, staticMemory[DIMENSIONS_DATA]);
+    console.log(threshold);
+    
+    var trianglesMemory = ctx.createBuffer(webcl.MEM_READ_WRITE, Math.floor(lengthOfData / 1.25));
+    var normalsMemory = ctx.createBuffer(webcl.MEM_READ_WRITE, Math.floor(lengthOfData / 1.25));
+    
+    var nTrianglesMemoryArray = new Array(1);
+    nTrianglesMemoryArray[0] = 0;
+    var nTrianglesMemory = locateMemoryInt(nTrianglesMemoryArray, webcl.MEM_READ_WRITE, cmdQueue, ctx);
+    
+    
+    
+    marchingKernel.setArg(0, matrixMemory);
+    marchingKernel.setArg(1, dimensionsMemory);
     marchingKernel.setArg(2, maxThreshMemory);
     marchingKernel.setArg(3, trianglesMemory);
     marchingKernel.setArg(4, normalsMemory);
     marchingKernel.setArg(5, nTrianglesMemory);
-    CLUtils.enqueueKernel(marchingKernel, new int[] { MHDReader.Nx, MHDReader.Ny, MHDReader.Nz }, queue);
-    Util.checkCLError(CL10.clFinish(queue));
+    
 
-    IntBuffer nTrianglesBuff = BufferUtils.createIntBuffer(1);
-    CL10.clEnqueueReadBuffer(queue, nTrianglesMemory, CL10.CL_TRUE, 0, nTrianglesBuff, null, null);
-    FloatBuffer trianglesBuff = BufferUtils.createFloatBuffer(nTrianglesBuff.get(0) * 9);
-    FloatBuffer normalsBuff = BufferUtils.createFloatBuffer(nTrianglesBuff.get(0) * 9);
-    CL10.clEnqueueReadBuffer(queue, trianglesMemory, CL10.CL_TRUE, 0, trianglesBuff, null, null);
-    CL10.clEnqueueReadBuffer(queue, normalsMemory, CL10.CL_TRUE, 0, normalsBuff, null, null);
+    enqueueKernel(marchingKernel, new Array(mhdContent.Nx, mhdContent.Ny, mhdContent.Nz), cmdQueue);
 
-    CLMem[] memObj = { maxThreshMemory, trianglesMemory, normalsMemory, nTrianglesMemory };
-    CLKernel[] kernelObj = { marchingKernel };
-    CLUtils.cleanCLResources(memObj, kernelObj, null);
-
-    return new Object[] { nTrianglesBuff, trianglesBuff, normalsBuff, threshold };*/
+    
+    var nTrianglesBuff = new Int32Array(1);
+    try {
+        cmdQueue.enqueueReadBuffer(nTrianglesMemory, true, 0, 4, nTrianglesBuff);
+    } catch(ex) {
+        throw "Couldn't read the buffer. " + ex;
+    }
+    
+    var trianglesBuff = new Float32Array(nTrianglesBuff[0] * 9);
+    try {
+        cmdQueue.enqueueReadBuffer(trianglesMemory, true, 0, nTrianglesBuff[0] * 9 * 4, trianglesBuff);
+    } catch(ex) {
+        throw "Couldn't read the buffer. " + ex;
+    }
+    
+    var normalsBuff = new Float32Array(nTrianglesBuff[0] * 9);
+    try {
+        cmdQueue.enqueueReadBuffer(normalsMemory, true, 0, nTrianglesBuff[0] * 9 * 4, normalsBuff);
+    } catch(ex) {
+        throw "Couldn't read the buffer. " + ex;
+    }
+    
+    maxThreshMemory.release();
+    trianglesMemory.release();
+    normalsMemory.release();
+    nTrianglesMemory.release();
+    marchingKernel.release();
+    cmdQueue.flush();
+    
+    
+    /*returnText = returnText + "\n\ntriangles: ";
+    for(var i = 0; i < trianglesBuff.length; i+=1)
+        returnText = returnText + trianglesBuff[i] + " ";
+    
+    returnText = returnText + "\n\nnormals: ";
+    for(var i = 0; i < normalsBuff.length; i+=10000)
+        returnText = returnText + normalsBuff[i] + " ";*/
+    
+    //console.log("nTirangles: " + nTrianglesBuff[0]);
+    
+    return new Array(nTrianglesBuff, trianglesBuff, normalsBuff, threshold);
 }
+
+function constructVBO(numOfTriangles, triangleArray, normalArray, threshold){
+    nTrianglesBuff = numOfTriangles; // int buffer
+    trianglesBuff = triangleArray; // float buffer
+    //labelHelper = new TrianglesLabelHelper(nTrianglesBuff.get(0));
+    
+    
+    var geometry = new THREE.BufferGeometry();
+
+    var bufferVertices = new Float32Array(trianglesBuff.length);
+    
+    for(var i = 0; i < bufferVertices.length; i+=3){
+        bufferVertices[i] = trianglesBuff[i];
+        bufferVertices[i+1] = trianglesBuff[i+1];
+        bufferVertices[i+2] = trianglesBuff[i+2];
+    }
+    
+    geometry.addAttribute( 'position', new THREE.BufferAttribute( bufferVertices, 3 ) );
+    
+    var bufferNormlas = new Float32Array(normalArray.length);
+    
+    for(var i = 0; i < bufferVertices.length; i+=3){
+        bufferNormlas[i] = normalArray[i];
+        bufferNormlas[i+1] = normalArray[i+1];
+        bufferNormlas[i+2] = normalArray[i+2];
+    }
+    
+    geometry.addAttribute( 'normal', new THREE.BufferAttribute( bufferNormlas, 3 ) );
+    
+    
+    /*for(var i = 0, j = 0; i < trianglesBuff.length; i+=9){
+        geometry.vertices.push(
+            new THREE.Vector3( trianglesBuff[i],  trianglesBuff[i+1], trianglesBuff[i+2] ),
+            new THREE.Vector3( trianglesBuff[i+3], trianglesBuff[i+4], trianglesBuff[i+5] ),
+            new THREE.Vector3(  trianglesBuff[i+6], trianglesBuff[i+7], trianglesBuff[i+8] )
+        );
+        geometry.faces.push( new THREE.Face3( j, j+1, j+2 ) );
+        j+=3;
+    }
+
+    geometry.computeBoundingSphere();*/
+    
+    var rawVertices = geometry.attributes.position.array;
+        rawVertexAvgX = 0,
+        rawVertexAvgY = 0,
+        rawVertexAvgZ = 0;
+    
+    for(var i = 0; i < rawVertices.length; i = i + 3){
+        rawVertexAvgX = rawVertexAvgX + rawVertices[i];
+        rawVertexAvgY = rawVertexAvgY + rawVertices[i+1];
+        rawVertexAvgZ = rawVertexAvgZ + rawVertices[i+2];
+    }
+    rawVertexAvgX = Math.round(rawVertexAvgX / (rawVertices.length / 3) * 10) / 10;
+    rawVertexAvgY = Math.round(rawVertexAvgY / (rawVertices.length / 3) * 10) / 10;
+    rawVertexAvgZ = Math.round(rawVertexAvgZ / (rawVertices.length / 3) * 10) / 10;
+    
+    geometry.attributes.position.needsUpdate = true;
+    for(var i = 0; i < rawVertices.length; i = i + 3){
+        //console.log(vertices[i] + " " + vertices[i+1] + " " + vertices[i+2]);
+        rawVertices[i] = rawVertices[i] - rawVertexAvgX;
+        rawVertices[i+1] = rawVertices[i+1] - rawVertexAvgY;
+        rawVertices[i+2] = rawVertices[i+2] - rawVertexAvgZ;
+    }
+    
+    
+    var material = new THREE.MeshBasicMaterial({
+        color: 0xFF0000
+    });
+    
+    var mesh = new THREE.Mesh(geometry, material);
+    //mesh.material.color.setRGB(1,0,0);
+    var threeObject = new THREE.Object3D();
+    threeObject.add(mesh);
+ 
+    threeObject.name = "rawObject";
+
+    //editor.scene.add(threeObject);
+    editor.addObject( threeObject );
+    sceneObject = editor.scene.getObjectByName("rawObject");
+    myCamera = editor.camera;
+    //change initial rotation
+    rotateAroundWorldAxis( sceneObject, new THREE.Vector3( 0, 1, 0 ), Math.PI/180 * -87.5 );
+    rotateAroundWorldAxis( sceneObject, new THREE.Vector3( 0, 0, 1 ), Math.PI/180 * -45 );
+    rotateAroundWorldAxis( sceneObject, new THREE.Vector3( 0, 1, 0 ), Math.PI/180 * -45 );
+
+    var light = new THREE.PointLight( 0xffffff, 1, 0 ); 
+    // color, intensity, distance
+    light.name = 'InitPointLight';
+
+    light.position.set(editor.camera.position.x, editor.camera.position.y, editor.camera.position.z + 10);
+    editor.addObject( light );
+    editor.camera.lookAt(new THREE.Vector3(0,0,0));         
+    cameraStartPosition = editor.camera.position.toArray();
+
+    //define camera controls
+
+
+
+    // x is red, y is green z is blue
+    var axis = new THREE.AxisHelper(100);
+    editor.scene.add(axis);
+    
+    
+}
+
 
 function enqueueKernel(kernel, dimensions, cmdQueue){
     var dim = dimensions.length;
     var globalWorkSize = new Array(dim);
+
     for (var i = 0; i < dim; i++) {
         globalWorkSize[i] = dimensions[i];
     }   

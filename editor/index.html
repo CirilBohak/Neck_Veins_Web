@@ -622,18 +622,19 @@
                 const int Nx = dimensions[0];
                 const int Ny = dimensions[1];
                 const int Nz = dimensions[2];
+                
                 const float max = maxThresh[0];
                 const float thresh = maxThresh[1];
                 const float thresholdLevel = max * thresh;
-
 
                 // check if not on edge
                 bool isXInBounds = x < Nx;
                 bool isYInBounds = y < Ny;
                 bool isZInBounds = z < Nz;
+                
                 int cubeIndex = 0;
 
-                if (isXInBounds && isYInBounds && isZInBounds && z < Nz - 2) {
+                if (isXInBounds && isYInBounds && isZInBounds && (z < Nz - 2)) {
                     // coordinates
                     const int left = x;
                     const int bottom = y;
